@@ -39,8 +39,9 @@ int main(void)
     char s[INET6_ADDRSTRLEN];
 
     memset(&hints, 0, sizeof hints);
-    //
-    hints.ai_family = AF_UNSPEC; // set to AF_INET to force IPv4
+    //use either IPV4 or IPV6, all are welcome here. This is an open application :)
+    hints.ai_family = AF_UNSPEC;
+
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE; // use my IP
 
