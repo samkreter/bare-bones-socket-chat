@@ -1,0 +1,4 @@
+/Users/samkreter/Documents/OneDrive/Fall 2016/Networks/socketChat/_build/CMakeFiles/client.dir
+/Users/samkreter/Documents/OneDrive/Fall 2016/Networks/socketChat/_build/CMakeFiles/server2.dir
+/Users/samkreter/Documents/OneDrive/Fall 2016/Networks/socketChat/_build/CMakeFiles/client2.dir
+/Users/samkreter/Documents/OneDrive/Fall 2016/Networks/socketChat/_build/CMakeFiles/server.dir

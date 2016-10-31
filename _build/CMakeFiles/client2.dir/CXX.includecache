@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/samkreter/Documents/OneDrive/Fall 2016/Networks/socketChat/src/client2.cpp
+iostream
+-
+stdlib.h
+-
+unistd.h
+-
+errno.h
+-
+string.h
+-
+netdb.h
+-
+sys/types.h
+-
+netinet/in.h
+-
+sys/socket.h
+-
+arpa/inet.h
+-
+
