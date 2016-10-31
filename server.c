@@ -17,7 +17,7 @@
 
 #define PORT "3490"  // the port users will be connecting to
 
-#define BACKLOG 10     // how many pending connections queue will hold
+#define BACKLOG 1   // how many pending connections queue will hold
 
 void sigchld_handler(int s)
 {
@@ -40,8 +40,7 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int main(void)
-{
+int main(){
     int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
     struct addrinfo hints, *servinfo, *p;
     struct sockaddr_storage their_addr; // connector's address information
@@ -51,10 +50,15 @@ int main(void)
     char s[INET6_ADDRSTRLEN];
     int rv;
 
+    //zero out the address space of the strucutre for safty
     memset(&hints, 0, sizeof hints);
+
+    // like client this allows for IPV4 and IPV6
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE; // use my IP
+
+    //use same ip address as return address
+    hints.ai_flags = AI_PASSIVE;
 
     if ((rv = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));

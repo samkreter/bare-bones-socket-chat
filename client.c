@@ -84,17 +84,19 @@ int main(int argc, char *argv[]){
 
     freeaddrinfo(servinfo); // all done with this structure
 
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        exit(1);
+    while(1){
+        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+            perror("recv");
+            exit(1);
+        }
+
+        //add the nul terminator to stop the string of data
+        buf[numbytes] = '\0';
+        if(numbytes > 0){
+            //print out the message received from the serveer
+            printf("client: received '%s'\n",buf);
+        }
     }
-
-    //add the nul terminator to stop the string of data
-    buf[numbytes] = '\0';
-
-    //print out the message received from the serveer
-    printf("client: received '%s'\n",buf);
-
     //close the socket
     close(sockfd);
 
