@@ -2,7 +2,6 @@
 ** client.c -- a stream socket client demo
 */
 #include <iostream>
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>

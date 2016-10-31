@@ -2,7 +2,7 @@
 ** server.c -- a stream socket server demo
 */
 
-#include <stdio.h>
+#include <iostream>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
@@ -15,7 +15,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-#include <iostream>
+
 
 #define PORT "3490"  // the port users will be connecting to
 
