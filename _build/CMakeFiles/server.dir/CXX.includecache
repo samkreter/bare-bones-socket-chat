@@ -9,6 +9,8 @@
 /Users/samkreter/Documents/OneDrive/Fall 2016/Networks/socketChat/src/server.cpp
 iostream
 -
+string
+-
 stdlib.h
 -
 unistd.h

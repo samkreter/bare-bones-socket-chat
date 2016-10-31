@@ -3,6 +3,7 @@
 */
 
 #include <iostream>
+#include <string>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
@@ -26,7 +27,15 @@
 #define BACKLOG 5 // how many pending connections queue will hold
 #define MAXDATASIZE 256
 
+
+
 using namespace std;
+
+using User = struct {
+    string username;
+    string password;
+};
+
 
 
 
@@ -40,7 +49,7 @@ void *get_in_addr(struct sockaddr *sa){
 }
 
 int login(int socket_fd);
-vector<string> getUsers();
+vector<User> getUsers();
 
 int main(){
 
@@ -128,17 +137,22 @@ int main(){
     return 0;
 }
 
-vector<string> getUsers(){
+vector<User> getUsers(){
     string line;
-    vector<string> users;
+    vector<User> users;
     ifstream myfile ("users.txt");
     if(myfile.is_open()){
-
         while(getline(myfile,line)){
-            users.push_back(line);
+
+            int commaPos = line.find(",");
+
+            users.push_back(User());
+            users.back().username = line.substr(1,commaPos-1);
+            users.back().password = line.substr(commaPos+1,line.length() - commaPos - 2);
         }
         myfile.close();
     }
+
 
     return users;
 }
@@ -149,7 +163,7 @@ int login(int socket_fd){
     char password[MAXDATASIZE];
     int numbytes = 0;
 
-    vector<string> users = getUsers();
+    vector<User> users = getUsers();
 
     //Get username
     if (send(socket_fd, "Enter Username", 20, 0) == -1)
@@ -183,13 +197,13 @@ int login(int socket_fd){
     cout << "Password: " << password << endl;
 
 
-    for(auto user : users){
-        if(user.find(string(username))!= std::string::npos && user.find(string(password)) != std::string::npos){
-            if(send(socket_fd, "Login Success",20,0) == -1)
-                perror("send");
-            return 1;
-        }
-    }
+    // for(auto user : users){
+    //     if(user.find(string(username))!= std::string::npos && user.find(string(password)) != std::string::npos){
+    //         if(send(socket_fd, "Login Success",20,0) == -1)
+    //             perror("send");
+    //         return 1;
+    //     }
+    // }
 
     if(send(socket_fd, "Invalid Username or Password",40,0) == -1)
         perror("send");
