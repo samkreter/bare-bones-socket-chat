@@ -201,7 +201,6 @@ int login(int socket_fd){
 
     username[numbytes] = '\0';
 
-
     //Get password
     numbytes = 0;
     if (send(socket_fd, "Enter Password", 20, 0) == -1)
