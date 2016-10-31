@@ -1,7 +1,7 @@
 /*
 ** client.c -- a stream socket client demo
 */
-
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -18,6 +18,7 @@
 
 #define MAXDATASIZE 100 // max number of bytes we can get at once
 
+using namespace std;
 
 // get sockaddr, IPv4 or IPv6:
 // Really nice function I found that looks really smart to other people
@@ -81,7 +82,7 @@ int main(int argc, char *argv[]){
     // for the awsome function with all the bit operators, you da best
     inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
             s, sizeof s);
-    printf("client: connecting to %s\n", s);
+    cout << "client: connecting to " <<  s << endl;
 
     freeaddrinfo(servinfo); // all done with this structure
 
@@ -96,7 +97,7 @@ int main(int argc, char *argv[]){
         buf[numbytes] = '\0';
         if(numbytes > 0){
             //print out the message received from the serveer
-            printf("client: received '%s'\n",buf);
+            cout << "client: received " << buf << endl;
         }
 
         scanf("%s",userInput);
