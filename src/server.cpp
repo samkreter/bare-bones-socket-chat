@@ -117,6 +117,7 @@ int main(){
 
     cout << ("server: waiting for connections...") << endl;
 
+    bool loginFlag = false;
     while(1) {  // main accept() loop
         sin_size = sizeof their_addr;
         new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
@@ -130,23 +131,26 @@ int main(){
             s, sizeof s);
         cout << "server: got connection from " <<  s << endl;
 
+
+        while(!loginFlag){
             //Send login notice
-        if (send(new_fd, "You must login", 20, 0) == -1)
-            perror("send");
+            if (send(new_fd, "Use Command Login To Login:", 28, 0) == -1)
+                perror("send");
 
 
 
-        string* cmd = getCommand(new_fd);
+            string* cmd = getCommand(new_fd);
 
-        if(cmd[0] == string("login")){
-            login(cmd[1],new_fd);
+            if(cmd[0] == string("login") && login(cmd[1],new_fd)){
+                loginFlag = true;
+            }
+            delete[] cmd;
         }
 
-
-
+        cout << "You all good on dat login bro";
         close(sockfd);
         close(new_fd);  // parent doesn't need this
-        delete[] cmd;
+
         break;
     }
 
@@ -216,9 +220,6 @@ int login(string cmd, int socket_fd){
 
 
     for(auto user : users){
-        cout << user.username << " " << user.password << endl;
-        cout << username << " " << password << endl;
-        cout << endl;
         if(user.username == username && user.password == password){
             if(send(socket_fd, "Login Success",20,0) == -1)
                 perror("send");
