@@ -41,6 +41,8 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+int login(int socket_fd);
+
 int main(){
     int sockfd, new_fd, numbytes;  // listen on sock_fd, new connection on new_fd
     struct addrinfo hints, *servinfo, *p;
@@ -128,22 +130,22 @@ int main(){
         if (!fork()) { // this is the child process
             close(sockfd); // child doesn't need the listener
 
-            if (send(new_fd, "Hello, world!", 13, 0) == -1)
-                perror("send");
+            // if (send(new_fd, "Hello, world!", 13, 0) == -1)
+            //     perror("send");
 
 
-            bzero(buffer,MAXDATASIZE);
-            if ((numbytes = recv(new_fd, buffer, MAXDATASIZE-1, 0)) == -1) {
-                perror("recv");
-                exit(1);
-            }
+            // bzero(buffer,MAXDATASIZE);
+            // if ((numbytes = recv(new_fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+            //     perror("recv");
+            //     exit(1);
+            // }
 
-            buffer[numbytes] = '\0';
-            if(numbytes > 0){
-                //print out the message received from the serveer
-                printf("server: received '%s'\n",buffer);
-            }
-
+            // buffer[numbytes] = '\0';
+            // if(numbytes > 0){
+            //     //print out the message received from the serveer
+            //     printf("server: received '%s'\n",buffer);
+            // }
+            login(new_fd);
             close(new_fd);
             exit(0);
         }
@@ -151,4 +153,44 @@ int main(){
     }
 
     return 0;
+}
+
+
+int login(int socket_fd){
+    char username[40];
+    char password[40];
+    int numbytes = 0;
+
+
+    //Get username
+    if (send(socket_fd, "Enter Username", 20, 0) == -1)
+        perror("send");
+
+
+    bzero(username,40);
+    if ((numbytes = recv(socket_fd, username, 39, 0)) == -1) {
+        perror("recv");
+        exit(1);
+    }
+
+    username[numbytes] = '\0';
+    printf("Username: %s\n",username);
+
+    //Get password
+    numbytes = 0;
+    if (send(socket_fd, "Enter Username", 20, 0) == -1)
+        perror("send1");
+
+
+    bzero(password,40);
+    if ((numbytes = recv(socket_fd, password`, 39, 0)) == -1) {
+        perror("recv");
+        return 0;
+    }
+
+    password[numbytes] = '\0';
+    printf("Password: %s\n",password);
+
+    return 1;
+
 }
