@@ -15,11 +15,15 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+#include <vector>
+#include <fstream>
+#include <string>
+
 
 
 #define PORT "3490"  // the port users will be connecting to
 
-#define BACKLOG 1   // how many pending connections queue will hold
+#define BACKLOG 5 // how many pending connections queue will hold
 #define MAXDATASIZE 256
 
 using namespace std;
@@ -46,6 +50,7 @@ void *get_in_addr(struct sockaddr *sa)
 }
 
 int login(int socket_fd);
+vector<string> getUsers();
 
 int main(){
 
@@ -160,6 +165,21 @@ int main(){
     return 0;
 }
 
+vector<string> getUsers(){
+    string line;
+    vector<string> users;
+    ifstream myfile ("users.txt");
+    if(myfile.is_open()){
+
+        while(getline(myfile,line)){
+            users.push_back(line);
+        }
+        myfile.close();
+    }
+
+    return users;
+}
+
 
 int login(int socket_fd){
     char username[MAXDATASIZE];
@@ -199,3 +219,6 @@ int login(int socket_fd){
     return 1;
 
 }
+
+
+// http://beej.us/guide/bgnet/output/html/multipage/clientserver.html
