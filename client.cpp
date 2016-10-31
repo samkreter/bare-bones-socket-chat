@@ -36,6 +36,7 @@ int main(int argc, char *argv[]){
     struct addrinfo hints, *servinfo, *p;
     int rv;
     char s[INET6_ADDRSTRLEN];
+    char userInput[MAXDATASIZE];
 
     if (argc != 2) {
         fprintf(stderr,"usage: client hostname\n");
@@ -84,20 +85,24 @@ int main(int argc, char *argv[]){
 
     freeaddrinfo(servinfo); // all done with this structure
 
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        exit(1);
-    }
 
-    //add the nul terminator to stop the string of data
-    buf[numbytes] = '\0';
-    if(numbytes > 0){
-        //print out the message received from the serveer
-        printf("client: received '%s'\n",buf);
-    }
+    while(1){
+        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+            perror("recv");
+            exit(1);
+        }
 
-    if (send(sockfd, "You Hello, world bro!", 30, 0) == -1)
-        perror("send");
+        //add the nul terminator to stop the string of data
+        buf[numbytes] = '\0';
+        if(numbytes > 0){
+            //print out the message received from the serveer
+            printf("client: received '%s'\n",buf);
+        }
+
+        scanf("%s",userInput);
+        if (send(sockfd, userInput, MAXDATASIZE, 0) == -1)
+            perror("send");
+    }
 
     //close the socket
     close(sockfd);

@@ -15,10 +15,14 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+#include <iostream>
+
 #define PORT "3490"  // the port users will be connecting to
 
 #define BACKLOG 1   // how many pending connections queue will hold
 #define MAXDATASIZE 256
+
+using namespace std;
 
 void sigchld_handler(int s)
 {
@@ -44,6 +48,7 @@ void *get_in_addr(struct sockaddr *sa)
 int login(int socket_fd);
 
 int main(){
+
     int sockfd, new_fd, numbytes;  // listen on sock_fd, new connection on new_fd
     struct addrinfo hints, *servinfo, *p;
     struct sockaddr_storage their_addr; // connector's address information
@@ -112,7 +117,7 @@ int main(){
         exit(1);
     }
 
-    printf("server: waiting for connections...\n");
+    cout << ("server: waiting for connections...") << endl;
 
     while(1) {  // main accept() loop
         sin_size = sizeof their_addr;
@@ -125,7 +130,7 @@ int main(){
         inet_ntop(their_addr.ss_family,
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s);
-        printf("server: got connection from %s\n", s);
+        cout << "server: got connection from " <<  s << endl;
 
         if (!fork()) { // this is the child process
             close(sockfd); // child doesn't need the listener
@@ -157,8 +162,8 @@ int main(){
 
 
 int login(int socket_fd){
-    char username[40];
-    char password[40];
+    char username[MAXDATASIZE];
+    char password[MAXDATASIZE];
     int numbytes = 0;
 
 
@@ -168,13 +173,13 @@ int login(int socket_fd){
 
 
     bzero(username,40);
-    if ((numbytes = recv(socket_fd, username, 39, 0)) == -1) {
+    if ((numbytes = recv(socket_fd, username, MAXDATASIZE - 1, 0)) == -1) {
         perror("recv");
         exit(1);
     }
 
     username[numbytes] = '\0';
-    printf("Username: %s\n",username);
+    cout << "Username: " << username << endl;
 
     //Get password
     numbytes = 0;
@@ -183,13 +188,13 @@ int login(int socket_fd){
 
 
     bzero(password,40);
-    if ((numbytes = recv(socket_fd, password`, 39, 0)) == -1) {
+    if ((numbytes = recv(socket_fd, password, MAXDATASIZE - 1, 0)) == -1) {
         perror("recv");
         return 0;
     }
 
     password[numbytes] = '\0';
-    printf("Password: %s\n",password);
+    cout << "Password: " << password << endl;
 
     return 1;
 
