@@ -186,6 +186,7 @@ int login(int socket_fd){
     char password[MAXDATASIZE];
     int numbytes = 0;
 
+    vector<string> users = getUsers();
 
     //Get username
     if (send(socket_fd, "Enter Username", 20, 0) == -1)
@@ -199,11 +200,11 @@ int login(int socket_fd){
     }
 
     username[numbytes] = '\0';
-    cout << "Username: " << username << endl;
+
 
     //Get password
     numbytes = 0;
-    if (send(socket_fd, "Enter Username", 20, 0) == -1)
+    if (send(socket_fd, "Enter Password", 20, 0) == -1)
         perror("send1");
 
 
@@ -214,9 +215,24 @@ int login(int socket_fd){
     }
 
     password[numbytes] = '\0';
+
+
+    cout << "Username: " << username << endl;
     cout << "Password: " << password << endl;
 
-    return 1;
+
+    for(auto user : users){
+        if(user.find(string(username))!= std::string::npos && user.find(string(password)) != std::string::npos){
+            if(send(socket_fd, "Login Success",20,0) == -1)
+                perror("send");
+            return 1;
+        }
+    }
+
+    if(send(socket_fd, "Invalid Username or Password",40,0) == -1)
+        perror("send");
+
+    return 0;
 
 }
 
