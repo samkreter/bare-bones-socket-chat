@@ -18,7 +18,9 @@
 
 #define MAXDATASIZE 100 // max number of bytes we can get at once
 
+
 // get sockaddr, IPv4 or IPv6:
+// Really nice function I found that looks really smart to other people
 void *get_in_addr(struct sockaddr *sa)
 {
     if (sa->sa_family == AF_INET) {
@@ -28,8 +30,7 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
     int sockfd, numbytes;
     char buf[MAXDATASIZE];
     struct addrinfo hints, *servinfo, *p;
@@ -42,7 +43,10 @@ int main(int argc, char *argv[])
     }
 
     memset(&hints, 0, sizeof hints);
+
+    //Accpets both IPV4 and IPV6
     hints.ai_family = AF_UNSPEC;
+    //Using the stream socket type
     hints.ai_socktype = SOCK_STREAM;
 
     if ((rv = getaddrinfo(argv[1], PORT, &hints, &servinfo)) != 0) {
@@ -72,6 +76,8 @@ int main(int argc, char *argv[])
         return 2;
     }
 
+    //Convert the binary address to string, Thanks to http://beej.us/guide/bgnet/output/html/multipage/clientserver.html
+    // for the awsome function with all the bit operators, you da best
     inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
             s, sizeof s);
     printf("client: connecting to %s\n", s);
@@ -83,10 +89,13 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    //add the nul terminator to stop the string of data
     buf[numbytes] = '\0';
 
+    //print out the message received from the serveer
     printf("client: received '%s'\n",buf);
 
+    //close the socket
     close(sockfd);
 
     return 0;

@@ -41,8 +41,9 @@ int main(void)
     memset(&hints, 0, sizeof hints);
     //use either IPV4 or IPV6, all are welcome here. This is an open application :)
     hints.ai_family = AF_UNSPEC;
-
+    //Using the datagram stype sockets
     hints.ai_socktype = SOCK_DGRAM;
+
     hints.ai_flags = AI_PASSIVE; // use my IP
 
     if ((rv = getaddrinfo(NULL, MYPORT, &hints, &servinfo)) != 0) {
