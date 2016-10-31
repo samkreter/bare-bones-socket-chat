@@ -86,7 +86,7 @@ int main(int argc, char *argv[]){
     freeaddrinfo(servinfo); // all done with this structure
 
 
-    while(1){
+   // while(1){
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
             exit(1);
@@ -98,11 +98,15 @@ int main(int argc, char *argv[]){
             //print out the message received from the serveer
             cout << "client: received " << buf << endl;
         }
+        //bzero(userInput,MAXDATASIZE);
+        string sUserInput;
+        getline(cin,sUserInput);
 
-        scanf("%s",userInput);
+        strcpy (userInput, sUserInput.c_str());
+
         if (send(sockfd, userInput, MAXDATASIZE, 0) == -1)
             perror("send");
-    }
+    //}
 
     //close the socket
     close(sockfd);

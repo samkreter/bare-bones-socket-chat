@@ -50,6 +50,7 @@ void *get_in_addr(struct sockaddr *sa){
 
 int login(int socket_fd);
 vector<User> getUsers();
+string* getCommand(int sock_fd);
 
 int main(){
 
@@ -129,9 +130,18 @@ int main(){
             s, sizeof s);
         cout << "server: got connection from " <<  s << endl;
 
-        login(new_fd);
+            //Send login notice
+        if (send(new_fd, "You must login", 20, 0) == -1)
+            perror("send");
+
+
+
+        string* cmd = getCommand(new_fd);
+        cout << cmd[0] << " " << cmd[1] << endl;
         close(sockfd);
         close(new_fd);  // parent doesn't need this
+        delete[] cmd;
+        break;
     }
 
     return 0;
@@ -158,39 +168,43 @@ vector<User> getUsers(){
 }
 
 
+string* getCommand(int socket_fd){
+    char command[MAXDATASIZE];
+    int numbytes = 0;
+    string* returns = new string[2];
+
+
+    bzero(command,MAXDATASIZE);
+
+    if ((numbytes = recv(socket_fd, command, MAXDATASIZE - 1, 0)) == -1) {
+        perror("recv");
+        exit(1);
+    }
+    command[numbytes] = '\0';
+    //cout << command;
+    string cmdString(command);
+    size_t spacePos = cmdString.find(" ");
+    returns[0] = cmdString.substr(0,spacePos);
+    returns[1] = cmdString.substr(spacePos + 1);
+
+    //cout << returns[0];
+    //cout << returns[1];
+
+    return returns;
+
+}
+
 int login(int socket_fd){
-    char username[MAXDATASIZE];
-    char password[MAXDATASIZE];
+    string username;
+    string password;
+    char command[MAXDATASIZE];
     int numbytes = 0;
 
     vector<User> users = getUsers();
 
-    //Get username
-    if (send(socket_fd, "Enter Username", 20, 0) == -1)
+    //Send login notice
+    if (send(socket_fd, "You must login", 20, 0) == -1)
         perror("send");
-
-
-    bzero(username,40);
-    if ((numbytes = recv(socket_fd, username, MAXDATASIZE - 1, 0)) == -1) {
-        perror("recv");
-        exit(1);
-    }
-
-    username[numbytes] = '\0';
-
-    //Get password
-    numbytes = 0;
-    if (send(socket_fd, "Enter Password", 20, 0) == -1)
-        perror("send1");
-
-
-    bzero(password,40);
-    if ((numbytes = recv(socket_fd, password, MAXDATASIZE - 1, 0)) == -1) {
-        perror("recv");
-        return 0;
-    }
-
-    password[numbytes] = '\0';
 
 
     cout << "Username: " << username << endl;
