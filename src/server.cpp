@@ -48,7 +48,7 @@ void *get_in_addr(struct sockaddr *sa){
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int login(int socket_fd);
+int login(string cmd, int socket_fd);
 vector<User> getUsers();
 string* getCommand(int sock_fd);
 
@@ -137,7 +137,13 @@ int main(){
 
 
         string* cmd = getCommand(new_fd);
-        cout << cmd[0] << " " << cmd[1] << endl;
+
+        if(cmd[0] == string("login")){
+            login(cmd[1],new_fd);
+        }
+
+
+
         close(sockfd);
         close(new_fd);  // parent doesn't need this
         delete[] cmd;
@@ -150,7 +156,7 @@ int main(){
 vector<User> getUsers(){
     string line;
     vector<User> users;
-    ifstream myfile ("users.txt");
+    ifstream myfile ("../users.txt");
     if(myfile.is_open()){
         while(getline(myfile,line)){
 
@@ -158,9 +164,13 @@ vector<User> getUsers(){
 
             users.push_back(User());
             users.back().username = line.substr(1,commaPos-1);
-            users.back().password = line.substr(commaPos+1,line.length() - commaPos - 2);
+            users.back().password = line.substr(commaPos+2,line.length() - commaPos - 3);
         }
         myfile.close();
+    }
+    else{
+        cerr << "couldn't open file";
+        exit(-1);
     }
 
 
@@ -187,14 +197,12 @@ string* getCommand(int socket_fd){
     returns[0] = cmdString.substr(0,spacePos);
     returns[1] = cmdString.substr(spacePos + 1);
 
-    //cout << returns[0];
-    //cout << returns[1];
 
     return returns;
 
 }
 
-int login(int socket_fd){
+int login(string cmd, int socket_fd){
     string username;
     string password;
     char command[MAXDATASIZE];
@@ -202,22 +210,21 @@ int login(int socket_fd){
 
     vector<User> users = getUsers();
 
-    //Send login notice
-    if (send(socket_fd, "You must login", 20, 0) == -1)
-        perror("send");
+    size_t spacePos = cmd.find(" ");
+    username = cmd.substr(0,spacePos);
+    password = cmd.substr(spacePos+1);
 
 
-    cout << "Username: " << username << endl;
-    cout << "Password: " << password << endl;
-
-
-    // for(auto user : users){
-    //     if(user.find(string(username))!= std::string::npos && user.find(string(password)) != std::string::npos){
-    //         if(send(socket_fd, "Login Success",20,0) == -1)
-    //             perror("send");
-    //         return 1;
-    //     }
-    // }
+    for(auto user : users){
+        cout << user.username << " " << user.password << endl;
+        cout << username << " " << password << endl;
+        cout << endl;
+        if(user.username == username && user.password == password){
+            if(send(socket_fd, "Login Success",20,0) == -1)
+                perror("send");
+            return 1;
+        }
+    }
 
     if(send(socket_fd, "Invalid Username or Password",40,0) == -1)
         perror("send");
