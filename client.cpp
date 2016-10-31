@@ -40,7 +40,7 @@ int main(int argc, char *argv[]){
     char userInput[MAXDATASIZE];
 
     if (argc != 2) {
-        fprintf(stderr,"usage: client hostname\n");
+        cerr << "usage: client hostname" << endl;
         exit(1);
     }
 
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]){
     hints.ai_socktype = SOCK_STREAM;
 
     if ((rv = getaddrinfo(argv[1], PORT, &hints, &servinfo)) != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+        cerr << "getaddrinfo: " <<  gai_strerror(rv) << endl;
         return 1;
     }
 
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]){
     }
 
     if (p == NULL) {
-        fprintf(stderr, "client: failed to connect\n");
+        cerr << "client: failed to connect" << endl;
         return 2;
     }
 

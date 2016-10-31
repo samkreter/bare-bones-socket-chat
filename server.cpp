@@ -70,7 +70,7 @@ int main(){
     hints.ai_flags = AI_PASSIVE;
 
     if ((rv = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+        cerr << "getaddrinfo: " <<  gai_strerror(rv) << endl;
         return 1;
     }
 
@@ -100,7 +100,7 @@ int main(){
     freeaddrinfo(servinfo); // all done with this structure
 
     if (p == NULL)  {
-        fprintf(stderr, "server: failed to bind\n");
+        cerr << "server: failed to bind" << endl;
         exit(1);
     }
 
