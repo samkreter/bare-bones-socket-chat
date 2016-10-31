@@ -18,6 +18,7 @@
 #define PORT "3490"  // the port users will be connecting to
 
 #define BACKLOG 1   // how many pending connections queue will hold
+#define MAXDATASIZE 256
 
 void sigchld_handler(int s)
 {
@@ -41,7 +42,7 @@ void *get_in_addr(struct sockaddr *sa)
 }
 
 int main(){
-    int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
+    int sockfd, new_fd, numbytes;  // listen on sock_fd, new connection on new_fd
     struct addrinfo hints, *servinfo, *p;
     struct sockaddr_storage their_addr; // connector's address information
     socklen_t sin_size;
@@ -49,6 +50,7 @@ int main(){
     int yes=1;
     char s[INET6_ADDRSTRLEN];
     int rv;
+    char buffer[MAXDATASIZE];
 
     //zero out the address space of the strucutre for safty
     memset(&hints, 0, sizeof hints);
@@ -125,8 +127,23 @@ int main(){
 
         if (!fork()) { // this is the child process
             close(sockfd); // child doesn't need the listener
+
             if (send(new_fd, "Hello, world!", 13, 0) == -1)
                 perror("send");
+
+
+            bzero(buffer,MAXDATASIZE);
+            if ((numbytes = recv(new_fd, buffer, MAXDATASIZE-1, 0)) == -1) {
+                perror("recv");
+                exit(1);
+            }
+
+            buffer[numbytes] = '\0';
+            if(numbytes > 0){
+                //print out the message received from the serveer
+                printf("server: received '%s'\n",buffer);
+            }
+
             close(new_fd);
             exit(0);
         }
