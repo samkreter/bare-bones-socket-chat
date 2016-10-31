@@ -137,8 +137,6 @@ int main(){
             if (send(new_fd, "Use Command Login To Login:", 28, 0) == -1)
                 perror("send");
 
-
-
             string* cmd = getCommand(new_fd);
 
             if(cmd[0] == string("login") && login(cmd[1],new_fd)){

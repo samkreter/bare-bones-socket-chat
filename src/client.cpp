@@ -96,7 +96,7 @@ int main(int argc, char *argv[]){
         buf[numbytes] = '\0';
         if(numbytes > 0){
             //print out the message received from the serveer
-            cout << "client: received " << buf << endl;
+            cout << buf << endl;
         }
         //bzero(userInput,MAXDATASIZE);
         string sUserInput;
