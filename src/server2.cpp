@@ -212,7 +212,7 @@ int main(){
     return 0;
 }
 
-
+//TODO BROCAST LOGOUT
 void threadFunc(int id,int new_fd, bool* finished,
     bool* msgFlag, vector<string>& msgs, vector<string>& currUsers){
     cout << "spawned thread: " << id << endl;
@@ -281,10 +281,9 @@ void threadFunc(int id,int new_fd, bool* finished,
                     perror("send");
 
                 loginFlag = false;
-
-            }
-            else if(cmd[0] == string("quit")){
+                currUsers.erase(std::remove(currUsers.begin(), currUsers.end(), currUser), currUsers.end());
                 break;
+
             }
             else {
                 if(send((new_fd),"Invalid Command",20,0) == -1)
