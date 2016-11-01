@@ -51,6 +51,7 @@ using User = struct {
 
 
 //prototypes for all the functions
+int who(vector<string>& currUsers,int new_fd);
 int newUser(string cmd, int socket_fd);
 int login(string cmd, int socket_fd, string* currUser,vector<string>& currUsers);
 int sendMessage(string cmd, int sock_fd, const string& currUser);
@@ -167,7 +168,6 @@ int main(){
             }
         }
 
-        cout << "good to next step"<< endl;
         sin_size = sizeof their_addr;
         new_fd = 0;
         new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
@@ -270,6 +270,9 @@ void threadFunc(int id,int new_fd, bool* finished,
             if(cmd[0] == string("newuser")){
                 newUser(cmd[1],new_fd);
             }
+            else if (cmd[0] == string("who")){
+                who(currUsers,new_fd);
+            }
             else if (cmd[0] == string("send")){
                 sendMessage(cmd[1],new_fd,currUser);
             }
@@ -286,13 +289,11 @@ void threadFunc(int id,int new_fd, bool* finished,
             else {
                 if(send((new_fd),"Invalid Command",20,0) == -1)
                     perror("send");
-                continue;
             }
         }
-
+    }
     delete[] cmd;
     close(new_fd);
-    }
 }
 
 //used to send a message with the username of the connected user back to themselves
@@ -367,6 +368,24 @@ int newUser(string cmd, int socket_fd){
 
 }
 
+int who(vector<string>& currUsers,int new_fd){
+    string names("Users:");
+
+    for(string user : currUsers){
+        names += (" " + user);
+    }
+
+    if(names.length() > MAXDATASIZE - 1){
+        cerr << "We in some trouble with this";
+        return 0;
+    }
+
+    if (send(new_fd, names.c_str(), MAXDATASIZE - 1, 0) == -1)
+        perror("send");
+
+    return 1;
+
+}
 
 //validates the user's username and password for login status
 int login(string cmd, int socket_fd, string* currUser,vector<string>& currUsers){
