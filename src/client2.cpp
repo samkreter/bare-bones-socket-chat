@@ -90,7 +90,7 @@ int main(int argc, char *argv[]){
    while(1){
         //wait to recieve from the server
         bzero(buf,MAXDATASIZE);
-        cout << "wating to receive" << endl;
+
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
             exit(1);
