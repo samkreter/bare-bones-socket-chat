@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <thread>
 #include <atomic>
+#include <queue>
 
 
 
@@ -56,6 +57,7 @@ int sendMessage(string cmd, int sock_fd, const string& currUser);
 vector<User> getUsers();
 string* getCommand(int sock_fd);
 void *get_in_addr(struct sockaddr *sa);
+void threadFunc(int id,int new_fd, bool* finished, bool* msgFlag, vector<string>& msgs);
 
 
 int main(){
@@ -70,15 +72,21 @@ int main(){
     int yes=1;
     char s[INET6_ADDRSTRLEN];
     int rv;
+    struct timeval tv;
 
+
+
+    //TODO Change to vector so they are thread safe
     bool finished[MAX_NUM_THREADS];
     bool msgFlags[MAX_NUM_THREADS];
     vector<string> msgs(MAX_NUM_THREADS);
-    vector<thread> threads;
+    vector<thread> threads(MAX_NUM_THREADS);
+    queue<int> ordering;
 
 
     //initialize the flags
     for(int i=0; i<MAX_NUM_THREADS; i++){
+        ordering.push(i);
         finished[i] = false;
         msgFlags[i] = false;
     }
@@ -137,25 +145,39 @@ int main(){
         perror("listen");
         exit(1);
     }
-
-
+    tv.tv_sec = 3;  /* 30 Secs Timeout */
+    tv.tv_usec = 0;
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
     cout << ("server: waiting for connections...") << endl;
 
 
 
 
     while(1){
-        if(threads.size() >= MAX_NUM_THREADS){
-            cout << "do stuff for this";
+        //if at max clients what to accept until a connection was closed
+        while(ordering.empty()){
+            for(int i=0; i<MAX_NUM_THREADS; i++){
+                if(finished[i]){
+                    finished[i] = false;
+                    msgFlags[i] = false;
+                    threads.at(i).join();
+                    ordering.push(i);
+                }
+            }
         }
 
+        cout << "good to next step"<< endl;
         sin_size = sizeof their_addr;
+        new_fd = 0;
         new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
 
         if (new_fd == -1) {
             perror("accept");
         }
-
+        else if(new_fd == 0){
+            cout << "testing";
+            continue;
+        }
         //turn the address from binary to family friendly G rated words
         inet_ntop(their_addr.ss_family,
             get_in_addr((struct sockaddr *)&their_addr),
@@ -164,8 +186,21 @@ int main(){
 
         cout << "server: got connection from " <<  s << endl;
 
-        threads.push_back(thread(threadFunc,threads.size(),new_fd,
-            ref(finished),ref(msgFlags),ref(msgs)));
+        int nextIndex = ordering.front();
+        ordering.pop();
+
+        threads.at(nextIndex) = thread(threadFunc,nextIndex,new_fd,
+            ref(finished),ref(msgFlags),ref(msgs));
+
+        //check if any clients have quite, reap the thread and free the index
+        for(int i=0; i<MAX_NUM_THREADS; i++){
+            if(finished[i]){
+                threads.at(i).join();
+                finished[i] = false;
+                msgFlags[i] = false;
+                ordering.push(i);
+            }
+        }
 
 
     }
@@ -177,7 +212,8 @@ int main(){
 }
 
 
-void threadFunc(int id,int new_fd,vector<bool>& finished, vector<bool>& msgFlag, vector<string>& msgs){
+void threadFunc(int id,int new_fd, bool* finished, bool* msgFlag, vector<string>& msgs){
+    cout << "spawned thread: " << id << endl;
     //needed flags for user flow
     bool loginFlag = false;
     bool connectionLost = false;
@@ -239,12 +275,18 @@ void threadFunc(int id,int new_fd,vector<bool>& finished, vector<bool>& msgFlag,
                     perror("send");
 
                 loginFlag = false;
-                acceptingNew = true;
+
             }
             else if(cmd[0] == string("quit")){
                 break;
             }
+            else {
+                if(send((new_fd),"Invalid Command",20,0) == -1)
+                    perror("send");
+                continue;
+            }
         }
+
     delete[] cmd;
     close(new_fd);
     }

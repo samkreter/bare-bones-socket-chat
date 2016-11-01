@@ -9,6 +9,8 @@
 /Users/samkreter/Documents/OneDrive/Fall 2016/Networks/socketChat/src/server2.cpp
 iostream
 -
+string
+-
 stdlib.h
 -
 unistd.h
@@ -36,5 +38,13 @@ vector
 fstream
 -
 string
+-
+algorithm
+-
+thread
+-
+atomic
+-
+queue
 -
 
