@@ -47,6 +47,7 @@ using User = struct {
 
 int newUser(string cmd, int socket_fd);
 int login(string cmd, int socket_fd, string* currUser);
+int sendMessage(string cmd, int sock_fd, const string& currUser);
 vector<User> getUsers();
 string* getCommand(int sock_fd);
 void *get_in_addr(struct sockaddr *sa);
@@ -157,6 +158,9 @@ int main(){
         if(cmd[0] == string("newuser")){
             newUser(cmd[1],new_fd);
         }
+        else if (cmd[0] == string("send")){
+            sendMessage(cmd[1],new_fd,currUser);
+        }
         else if(cmd[0] == string("quit")){
             break;
         }
@@ -171,7 +175,13 @@ int main(){
     return 0;
 }
 
+int sendMessage(string cmd, int socket_fd, const string& currUser){
 
+    if(send(socket_fd,(currUser + ":" + cmd).c_str(), MAXDATASIZE -1, 0) == -1)
+        perror("send");
+
+    return 1;
+}
 
 int newUser(string cmd, int socket_fd){
 
