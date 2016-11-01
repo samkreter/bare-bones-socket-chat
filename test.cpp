@@ -2,7 +2,12 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <algorithm>
+
 using namespace std;
+
+
+
 
 
 using User = struct {
@@ -32,11 +37,14 @@ vector<User> test(){
 
 int main () {
     vector<User> t = test();
-
-    for(int i =0; i < t.size(); i ++ ){
-        cout << t.at(i).username << " " <<t.at(i).password<<endl;
+    string name("To");
+    auto it = find_if(t.begin(),t.end(),[name](User u){
+        return (u.username == name);
+    });
+    if(it == t.end()){
+        cout << "big dog";
     }
-
+    cout << (*it).username;
 
     return 0;
 }

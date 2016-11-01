@@ -19,6 +19,7 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <algorithm>
 
 
 
@@ -26,6 +27,11 @@
 
 #define BACKLOG 5 // how many pending connections queue will hold
 #define MAXDATASIZE 256
+
+
+// Program error codes
+#define USER_EXISTS -1
+#define UP_NOT_IN_BOUNDS -2
 
 
 
@@ -38,19 +44,11 @@ using User = struct {
 
 
 
-
-// get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa){
-    if (sa->sa_family == AF_INET) {
-        return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
-
-    return &(((struct sockaddr_in6*)sa)->sin6_addr);
-}
-
+int newUser(string cmd, int socket_fd);
 int login(string cmd, int socket_fd);
 vector<User> getUsers();
 string* getCommand(int sock_fd);
+void *get_in_addr(struct sockaddr *sa);
 
 int main(){
 
@@ -63,6 +61,7 @@ int main(){
     char s[INET6_ADDRSTRLEN];
     int rv;
     char buffer[MAXDATASIZE];
+    string* cmd;
 
     //zero out the address space of the strucutre for safty
     memset(&hints, 0, sizeof hints);
@@ -137,17 +136,22 @@ int main(){
             if (send(new_fd, "Use Command Login To Login:", 28, 0) == -1)
                 perror("send");
 
-            string* cmd = getCommand(new_fd);
+            cmd = getCommand(new_fd);
 
             if(cmd[0] == string("login") && login(cmd[1],new_fd)){
                 loginFlag = true;
             }
-            delete[] cmd;
         }
 
-        cout << "You all good on dat login bro";
+        string* cmd = getCommand(new_fd);
+        if(cmd[0] == string("newuser")){
+            newUser(cmd[1],new_fd);
+        }
+
+        //tity up everyting
+        delete[] cmd;
         close(sockfd);
-        close(new_fd);  // parent doesn't need this
+        close(new_fd);
 
         break;
     }
@@ -155,29 +159,104 @@ int main(){
     return 0;
 }
 
-vector<User> getUsers(){
-    string line;
-    vector<User> users;
-    ifstream myfile ("../users.txt");
-    if(myfile.is_open()){
-        while(getline(myfile,line)){
+int newUser(string cmd, int socket_fd){
 
-            int commaPos = line.find(",");
+    size_t spacePos = cmd.find(" ");
+    string username = cmd.substr(0,spacePos);
+    string password = cmd.substr(spacePos+1);
 
-            users.push_back(User());
-            users.back().username = line.substr(1,commaPos-1);
-            users.back().password = line.substr(commaPos+2,line.length() - commaPos - 3);
+
+    //open the user file
+    ofstream usersFile("../users.txt", std::ios_base::app);
+
+    //make sure the file is open
+    if(!usersFile.is_open()){
+        cerr << "Could not open user.txt file" << endl;
+        return -1;
+    }
+
+
+    vector<User> users = getUsers();
+
+    if(username.length() < 32 && password.length() > 3 && password.length() < 9){
+
+        //search the currently added users
+        auto it = find_if(users.begin(),users.end(),[username](User u){
+            return (u.username == username);
+        });
+
+        //if it was not found, add the user
+        if(it == users.end()){
+
+            usersFile << endl << "(" << username << ", " << password << ")";
+
+
+            if(send(socket_fd,"User successfully added!", 30, 0) == -1)
+                perror("send");
+            return 1;
         }
-        myfile.close();
-    }
-    else{
-        cerr << "couldn't open file";
-        exit(-1);
+
+
+        //the user already exists
+        if(send(socket_fd, "User already Exists",25,0) == -1)
+            perror("send");
+        return USER_EXISTS;
+
     }
 
 
-    return users;
+    if(send(socket_fd, "User/password not in bounds",30,0) == -1)
+            perror("send");
+
+    return UP_NOT_IN_BOUNDS;
+
 }
+
+
+
+
+
+int login(string cmd, int socket_fd){
+    string username;
+    string password;
+    char command[MAXDATASIZE];
+    int numbytes = 0;
+
+    vector<User> users = getUsers();
+
+    size_t spacePos = cmd.find(" ");
+    username = cmd.substr(0,spacePos);
+    password = cmd.substr(spacePos+1);
+
+
+    //search through all the users and check for usersname and password
+    auto it = find_if(users.begin(),users.end(),[username,password](User u){
+        return (u.username == username && u.password == password);
+    });
+
+    if(it != users.end()){
+        if(send(socket_fd, "Login Success",20,0) == -1)
+            perror("send");
+        return 1;
+
+    }
+
+    if(send(socket_fd, "Invalid Username or Password",40,0) == -1)
+        perror("send");
+
+    return 0;
+
+}
+
+// get sockaddr, IPv4 or IPv6:
+void *get_in_addr(struct sockaddr *sa){
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
 
 
 string* getCommand(int socket_fd){
@@ -204,32 +283,28 @@ string* getCommand(int socket_fd){
 
 }
 
-int login(string cmd, int socket_fd){
-    string username;
-    string password;
-    char command[MAXDATASIZE];
-    int numbytes = 0;
+vector<User> getUsers(){
+    string line;
+    vector<User> users;
+    ifstream myfile ("../users.txt");
+    if(myfile.is_open()){
+        while(getline(myfile,line)){
 
-    vector<User> users = getUsers();
+            int commaPos = line.find(",");
 
-    size_t spacePos = cmd.find(" ");
-    username = cmd.substr(0,spacePos);
-    password = cmd.substr(spacePos+1);
-
-
-    for(auto user : users){
-        if(user.username == username && user.password == password){
-            if(send(socket_fd, "Login Success",20,0) == -1)
-                perror("send");
-            return 1;
+            users.push_back(User());
+            users.back().username = line.substr(1,commaPos-1);
+            users.back().password = line.substr(commaPos+2,line.length() - commaPos - 3);
         }
+        myfile.close();
+    }
+    else{
+        cerr << "couldn't open file";
+        exit(-1);
     }
 
-    if(send(socket_fd, "Invalid Username or Password",40,0) == -1)
-        perror("send");
 
-    return 0;
-
+    return users;
 }
 
 
