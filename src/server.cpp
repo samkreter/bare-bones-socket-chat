@@ -46,10 +46,11 @@ using User = struct {
 
 
 int newUser(string cmd, int socket_fd);
-int login(string cmd, int socket_fd);
+int login(string cmd, int socket_fd, string* currUser);
 vector<User> getUsers();
 string* getCommand(int sock_fd);
 void *get_in_addr(struct sockaddr *sa);
+
 
 int main(){
 
@@ -63,6 +64,7 @@ int main(){
     int rv;
     char buffer[MAXDATASIZE];
     string* cmd;
+    string currUser;
 
     //zero out the address space of the strucutre for safty
     memset(&hints, 0, sizeof hints);
@@ -138,7 +140,7 @@ int main(){
 
             cmd = getCommand(new_fd);
 
-            if(cmd[0] == string("login") && login(cmd[1],new_fd)){
+            if(cmd[0] == string("login") && login(cmd[1],new_fd,&currUser)){
                 loginFlag = true;
             }
         }
@@ -168,6 +170,8 @@ int main(){
 
     return 0;
 }
+
+
 
 int newUser(string cmd, int socket_fd){
 
@@ -226,7 +230,7 @@ int newUser(string cmd, int socket_fd){
 
 
 
-int login(string cmd, int socket_fd){
+int login(string cmd, int socket_fd, string* currUser){
     string username;
     string password;
     char command[MAXDATASIZE];
@@ -247,6 +251,7 @@ int login(string cmd, int socket_fd){
     if(it != users.end()){
         if(send(socket_fd, "Login Success",20,0) == -1)
             perror("send");
+        *currUser = it->username;
         cout << "login successfully" << endl;
         return 1;
 
