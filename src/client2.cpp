@@ -13,9 +13,9 @@
 
 #include <arpa/inet.h>
 
-#define PORT "3490" // the port client will be connecting to
+#define PORT "3491" // the port client will be connecting to
 
-#define MAXDATASIZE 100 // max number of bytes we can get at once
+#define MAXDATASIZE 256 // max number of bytes we can get at once
 
 using namespace std;
 
@@ -31,6 +31,7 @@ void *get_in_addr(struct sockaddr *sa)
 }
 
 int main(int argc, char *argv[]){
+    //lots of declaration with the socket code
     int sockfd, numbytes;
     char buf[MAXDATASIZE];
     struct addrinfo hints, *servinfo, *p;
@@ -86,7 +87,10 @@ int main(int argc, char *argv[]){
     freeaddrinfo(servinfo); // all done with this structure
 
 
-    while(1){
+   while(1){
+        //wait to recieve from the server
+        bzero(buf,MAXDATASIZE);
+        cout << "wating to receive" << endl;
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
             exit(1);
@@ -96,10 +100,16 @@ int main(int argc, char *argv[]){
         buf[numbytes] = '\0';
         if(numbytes > 0){
             //print out the message received from the serveer
-            cout << "client: received " << buf << endl;
+            cout << buf << endl;
         }
+        //get the users input everytime something is received from the server
+        string sUserInput;
+        getline(cin,sUserInput);
 
-        scanf("%s",userInput);
+        //copy it to a cstring
+        strcpy (userInput, sUserInput.c_str());
+
+        //send the input to the server
         if (send(sockfd, userInput, MAXDATASIZE, 0) == -1)
             perror("send");
     }
