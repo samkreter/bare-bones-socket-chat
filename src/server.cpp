@@ -147,37 +147,44 @@ int main(){
 
             cmd = getCommand(new_fd);
 
+            if(cmd == NULL){
+                cout << "connection with host lost" << endl;
+                acceptingNew = true;
+                break;
+            }
+
             if(cmd[0] == string("login") && login(cmd[1],new_fd,&currUser)){
                 loginFlag = true;
             }
         }
 
-        string* cmd = getCommand(new_fd);
+        if(loginFlag){
+            string* cmd = getCommand(new_fd);
 
-        //connection to the socket was lost
-        if(cmd == NULL){
-            cout << "Client connection lost" << endl;
-            break;
-        }
+            //connection to the socket was lost
+            if(cmd == NULL){
+                cout << "Client connection lost" << endl;
+                break;
+            }
 
 
-        if(cmd[0] == string("newuser")){
-            newUser(cmd[1],new_fd);
-        }
-        else if (cmd[0] == string("send")){
-            sendMessage(cmd[1],new_fd,currUser);
-        }
-        else if (cmd[0] == string("logout")){
-            if (send(new_fd, "You are now loged out", 25, 0) == -1)
-                perror("send");
+            if(cmd[0] == string("newuser")){
+                newUser(cmd[1],new_fd);
+            }
+            else if (cmd[0] == string("send")){
+                sendMessage(cmd[1],new_fd,currUser);
+            }
+            else if (cmd[0] == string("logout")){
+                if (send(new_fd, "You are now loged out", 25, 0) == -1)
+                    perror("send");
 
-            loginFlag = false;
-            acceptingNew = true;
+                loginFlag = false;
+                acceptingNew = true;
+            }
+            else if(cmd[0] == string("quit")){
+                break;
+            }
         }
-        else if(cmd[0] == string("quit")){
-            break;
-        }
-
     }
 
     //tity up everyting
