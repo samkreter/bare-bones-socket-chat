@@ -20,6 +20,8 @@
 #include <fstream>
 #include <string>
 #include <algorithm>
+#include <thread>
+#include <atomic>
 
 
 
@@ -27,7 +29,8 @@
 
 #define BACKLOG 5 // how many pending connections queue will hold
 #define MAXDATASIZE 256
-#define RECIEVE_MAX 15 //
+#define RECIEVE_MAX 15
+#define MAX_NUM_THREADS 10
 
 
 // Program error codes, basicly useless for this but thought i'd add them
@@ -67,9 +70,18 @@ int main(){
     int yes=1;
     char s[INET6_ADDRSTRLEN];
     int rv;
-    char buffer[MAXDATASIZE];
-    string* cmd;
-    string currUser;
+
+    bool finished[MAX_NUM_THREADS];
+    bool msgFlags[MAX_NUM_THREADS];
+    vector<string> msgs(MAX_NUM_THREADS);
+    vector<thread> threads;
+
+
+    //initialize the flags
+    for(int i=0; i<MAX_NUM_THREADS; i++){
+        finished[i] = false;
+        msgFlags[i] = false;
+    }
 
     //zero out the address space of the strucutre for safty
     memset(&hints, 0, sizeof hints);
@@ -129,32 +141,52 @@ int main(){
 
     cout << ("server: waiting for connections...") << endl;
 
-    //needed flags for user flow
-    bool loginFlag = false;
-    bool acceptingNew = true;
+
 
 
     while(1){
-
-        //accept a new connection
-        if(acceptingNew){
-
-            sin_size = sizeof their_addr;
-            new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
-
-            if (new_fd == -1) {
-                perror("accept");
-            }
-
-            //turn the address from binary to family friendly G rated words
-            inet_ntop(their_addr.ss_family,
-                get_in_addr((struct sockaddr *)&their_addr),
-                s, sizeof s);
-
-            cout << "server: got connection from " <<  s << endl;
-            acceptingNew = false;
+        if(threads.size() >= MAX_NUM_THREADS){
+            cout << "do stuff for this";
         }
 
+        sin_size = sizeof their_addr;
+        new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+
+        if (new_fd == -1) {
+            perror("accept");
+        }
+
+        //turn the address from binary to family friendly G rated words
+        inet_ntop(their_addr.ss_family,
+            get_in_addr((struct sockaddr *)&their_addr),
+            s, sizeof s);
+
+
+        cout << "server: got connection from " <<  s << endl;
+
+        threads.push_back(thread(threadFunc,threads.size(),new_fd,
+            ref(finished),ref(msgFlags),ref(msgs)));
+
+
+    }
+
+    //tity up everyting
+    close(sockfd);
+
+    return 0;
+}
+
+
+void threadFunc(int id,int new_fd,vector<bool>& finished, vector<bool>& msgFlag, vector<string>& msgs){
+    //needed flags for user flow
+    bool loginFlag = false;
+    bool connectionLost = false;
+    char buffer[MAXDATASIZE];
+    string* cmd;
+    string currUser;
+
+
+    while(1){
         //don't let anyone past unless they got that login
         while(!loginFlag){
 
@@ -168,7 +200,7 @@ int main(){
             //if the getCommand function returns null it means connection was lost
             if(cmd == NULL){
                 cout << "connection with host lost" << endl;
-                acceptingNew = true;
+                connectionLost = true;
                 break;
             }
 
@@ -178,6 +210,12 @@ int main(){
             }
         }
 
+        //make sure connection isn't lost during logins
+        if(connectionLost){
+            delete[] cmd;
+            close(new_fd);
+            return;
+        }
         //start looping through recieving and sending messages
         if(loginFlag){
             string* cmd = getCommand(new_fd);
@@ -207,14 +245,9 @@ int main(){
                 break;
             }
         }
-    }
-
-    //tity up everyting
     delete[] cmd;
-    close(sockfd);
     close(new_fd);
-
-    return 0;
+    }
 }
 
 //used to send a message with the username of the connected user back to themselves
