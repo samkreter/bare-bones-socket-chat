@@ -52,12 +52,13 @@ using User = struct {
 
 //prototypes for all the functions
 int newUser(string cmd, int socket_fd);
-int login(string cmd, int socket_fd, string* currUser);
+int login(string cmd, int socket_fd, string* currUser,vector<string>& currUsers);
 int sendMessage(string cmd, int sock_fd, const string& currUser);
 vector<User> getUsers();
 string* getCommand(int sock_fd);
 void *get_in_addr(struct sockaddr *sa);
-void threadFunc(int id,int new_fd, bool* finished, bool* msgFlag, vector<string>& msgs);
+void threadFunc(int id,int new_fd, bool* finished,
+    bool* msgFlag, vector<string>& msgs,vector<string>& currUsers);
 
 
 int main(){
@@ -76,7 +77,7 @@ int main(){
 
 
 
-    //TODO Change to vector so they are thread safe
+    vector<string> currUsers;
     bool finished[MAX_NUM_THREADS];
     bool msgFlags[MAX_NUM_THREADS];
     vector<string> msgs(MAX_NUM_THREADS);
@@ -190,7 +191,7 @@ int main(){
         ordering.pop();
 
         threads.at(nextIndex) = thread(threadFunc,nextIndex,new_fd,
-            ref(finished),ref(msgFlags),ref(msgs));
+            ref(finished),ref(msgFlags),ref(msgs),ref(currUsers));
 
         //check if any clients have quite, reap the thread and free the index
         for(int i=0; i<MAX_NUM_THREADS; i++){
@@ -212,7 +213,8 @@ int main(){
 }
 
 
-void threadFunc(int id,int new_fd, bool* finished, bool* msgFlag, vector<string>& msgs){
+void threadFunc(int id,int new_fd, bool* finished,
+    bool* msgFlag, vector<string>& msgs, vector<string>& currUsers){
     cout << "spawned thread: " << id << endl;
     //needed flags for user flow
     bool loginFlag = false;
@@ -241,7 +243,8 @@ void threadFunc(int id,int new_fd, bool* finished, bool* msgFlag, vector<string>
             }
 
             //if they are all logged in set it all up
-            if(cmd[0] == string("login") && login(cmd[1],new_fd,&currUser)){
+            if(cmd[0] == string("login") && login(cmd[1],new_fd,&currUser,currUsers)){
+                //add the user to the current users list
                 loginFlag = true;
             }
         }
@@ -366,7 +369,7 @@ int newUser(string cmd, int socket_fd){
 
 
 //validates the user's username and password for login status
-int login(string cmd, int socket_fd, string* currUser){
+int login(string cmd, int socket_fd, string* currUser,vector<string>& currUsers){
 
     string username;
     string password;
@@ -391,11 +394,21 @@ int login(string cmd, int socket_fd, string* currUser){
     //if the find function found a match, then add the users name and
     // send confirmation
     if(it != users.end()){
-        if(send(socket_fd, "Login Success",20,0) == -1)
-            perror("send");
-        *currUser = it->username;
-        cout << "login successfully" << endl;
-        return 1;
+        auto currUsersIt = find(currUsers.begin(),currUsers.end(),username);
+
+        if(currUsersIt == currUsers.end()){
+
+            if(send(socket_fd, "Login Success",20,0) == -1)
+                perror("send");
+            *currUser = it->username;
+            currUsers.push_back(it->username);
+            cout << "login successfully" << endl;
+            return 1;
+        }
+        else{
+            if(send(socket_fd, "User is already logged in",30,0) == -1)
+                perror("user already logged in");
+        }
 
     }
 
