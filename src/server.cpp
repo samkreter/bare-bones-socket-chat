@@ -258,11 +258,14 @@ int newUser(string cmd, int socket_fd){
         //if it was not found, add the user
         if(it == users.end()){
 
+            //add the new user to the file
             usersFile << endl << "(" << username << ", " << password << ")";
 
-
+            //send confirmation to client that everythings good
             if(send(socket_fd,"User successfully added!", 30, 0) == -1)
                 perror("send");
+
+            //server note
             cout << "User "<< username << " successfully added" << endl;
             return 1;
         }
@@ -272,6 +275,7 @@ int newUser(string cmd, int socket_fd){
         if(send(socket_fd, "User already Exists",25,0) == -1)
             perror("send");
         cout << "User " << username << " already exists" << endl;
+        //return the error
         return USER_EXISTS;
 
     }
@@ -280,20 +284,25 @@ int newUser(string cmd, int socket_fd){
             perror("send");
 
     cout << "User " << username << "out of bounds" << endl;
+    //return the specific error code
     return UP_NOT_IN_BOUNDS;
 
 }
 
 
-
+//validates the user's username and password for login status
 int login(string cmd, int socket_fd, string* currUser){
+
     string username;
     string password;
     char command[MAXDATASIZE];
     int numbytes = 0;
 
+    //get the current user's usernames and passwords from the userfile
     vector<User> users = getUsers();
 
+    //parse the command string given to the function
+    //if no sername or password this step will catch that and not error out
     size_t spacePos = cmd.find(" ");
     username = cmd.substr(0,spacePos);
     password = cmd.substr(spacePos+1);
@@ -304,6 +313,8 @@ int login(string cmd, int socket_fd, string* currUser){
         return (u.username == username && u.password == password);
     });
 
+    //if the find function found a match, then add the users name and
+    // send confirmation
     if(it != users.end()){
         if(send(socket_fd, "Login Success",20,0) == -1)
             perror("send");
@@ -313,6 +324,7 @@ int login(string cmd, int socket_fd, string* currUser){
 
     }
 
+    //otherwise error
     if(send(socket_fd, "Invalid Username or Password",40,0) == -1)
         perror("send");
     cout << "Invalid username or password" << endl;
@@ -321,7 +333,7 @@ int login(string cmd, int socket_fd, string* currUser){
 
 }
 
-// get sockaddr, IPv4 or IPv6:
+// get sockaddr, IPv4 or IPv6, this is an amazing function I found that works great:
 void *get_in_addr(struct sockaddr *sa){
     if (sa->sa_family == AF_INET) {
         return &(((struct sockaddr_in*)sa)->sin_addr);
@@ -331,15 +343,21 @@ void *get_in_addr(struct sockaddr *sa){
 }
 
 
-
+//used to parse input from the users and parsing out the current command
 string* getCommand(int socket_fd){
+
     char command[MAXDATASIZE];
     string cmdString;
     int numbytes = 0;
     string* returns = new string[2];
+
+    //keep count of number of empty data recieved,
+    // if more than max number was recieved, we know that the client has
+    //  been disconnected
     size_t count = 0;
 
     while(cmdString.length() == 0){
+        //zero out the command just in case
         bzero(command,MAXDATASIZE);
 
         if ((numbytes = recv(socket_fd, command, MAXDATASIZE - 1, 0)) == -1) {
@@ -347,17 +365,19 @@ string* getCommand(int socket_fd){
             exit(1);
         }
 
+        //add null terminator to the received string
         command[numbytes] = '\0';
 
-
+        //convert to c++ string
         cmdString = string(command);
 
-
+        //check for the client disconnect
         count++;
         if(count > RECIEVE_MAX)
             return NULL;
     }
 
+    //finish parsing input and return
     size_t spacePos = cmdString.find(" ");
     returns[0] = cmdString.substr(0,spacePos);
     returns[1] = cmdString.substr(spacePos + 1);
@@ -367,17 +387,23 @@ string* getCommand(int socket_fd){
 
 }
 
+
+//helper function to parse username and password from file and return in struct
 vector<User> getUsers(){
     string line;
     vector<User> users;
     ifstream myfile ("../users.txt");
+
     if(myfile.is_open()){
         while(getline(myfile,line)){
 
+            //get pos of comma
             int commaPos = line.find(",");
 
             users.push_back(User());
+            //username if everything before comma and after (
             users.back().username = line.substr(1,commaPos-1);
+            //password is evertyhign after the comma and space and before the )
             users.back().password = line.substr(commaPos+2,line.length() - commaPos - 3);
         }
         myfile.close();
