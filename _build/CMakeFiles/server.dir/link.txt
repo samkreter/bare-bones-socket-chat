@@ -1,1 +1,1 @@
-g++-4.9   --std=c++11 -pthread -Werror -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/server.dir/src/server.cpp.o  -o server  
+g++-4.9   --std=c++11 -pthread -g -Werror -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/server.dir/src/server.cpp.o  -o server  

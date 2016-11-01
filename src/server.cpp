@@ -27,6 +27,7 @@
 
 #define BACKLOG 5 // how many pending connections queue will hold
 #define MAXDATASIZE 256
+#define RECIEVE_MAX 15
 
 
 // Program error codes
@@ -143,6 +144,14 @@ int main(){
         }
 
         string* cmd = getCommand(new_fd);
+
+        //connection to the socket was lost
+        if(cmd == NULL){
+            cout << "Client connection lost" << endl;
+            break;
+        }
+
+
         if(cmd[0] == string("newuser")){
             newUser(cmd[1],new_fd);
         }
@@ -207,7 +216,6 @@ int newUser(string cmd, int socket_fd){
 
     }
 
-
     if(send(socket_fd, "User/password not in bounds",30,0) == -1)
             perror("send");
 
@@ -215,8 +223,6 @@ int newUser(string cmd, int socket_fd){
     return UP_NOT_IN_BOUNDS;
 
 }
-
-
 
 
 
@@ -270,6 +276,7 @@ string* getCommand(int socket_fd){
     string cmdString;
     int numbytes = 0;
     string* returns = new string[2];
+    size_t count = 0;
 
     while(cmdString.length() == 0){
         bzero(command,MAXDATASIZE);
@@ -283,6 +290,11 @@ string* getCommand(int socket_fd){
 
 
         cmdString = string(command);
+
+
+        count++;
+        if(count > RECIEVE_MAX)
+            return NULL;
     }
 
     size_t spacePos = cmdString.find(" ");

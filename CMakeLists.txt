@@ -14,7 +14,7 @@ ENDIF()
 
 
 
-set(CMAKE_CXX_FLAGS "--std=c++11 -pthread -Werror")
+set(CMAKE_CXX_FLAGS "--std=c++11 -pthread -g -Werror")
 
 
 add_executable(server src/server.cpp)
