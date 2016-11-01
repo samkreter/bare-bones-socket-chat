@@ -206,6 +206,11 @@ int main(){
             else if(cmd[0] == string("quit")){
                 break;
             }
+            else {
+                if(send((new_fd),"Invalid Command",20,0) == -1)
+                    perror("send");
+                continue;
+            }
         }
     }
 
