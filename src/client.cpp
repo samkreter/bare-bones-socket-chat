@@ -31,6 +31,7 @@ void *get_in_addr(struct sockaddr *sa)
 }
 
 int main(int argc, char *argv[]){
+    //lots of declaration with the socket code
     int sockfd, numbytes;
     char buf[MAXDATASIZE];
     struct addrinfo hints, *servinfo, *p;
@@ -87,6 +88,7 @@ int main(int argc, char *argv[]){
 
 
    while(1){
+        //wait to recieve from the server
         bzero(buf,MAXDATASIZE);
         cout << "wating to receive" << endl;
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
@@ -100,12 +102,14 @@ int main(int argc, char *argv[]){
             //print out the message received from the serveer
             cout << buf << endl;
         }
-        //bzero(userInput,MAXDATASIZE);
+        //get the users input everytime something is received from the server
         string sUserInput;
         getline(cin,sUserInput);
 
+        //copy it to a cstring
         strcpy (userInput, sUserInput.c_str());
 
+        //send the input to the server
         if (send(sockfd, userInput, MAXDATASIZE, 0) == -1)
             perror("send");
     }
