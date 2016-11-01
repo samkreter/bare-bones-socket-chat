@@ -121,19 +121,25 @@ int main(){
     cout << ("server: waiting for connections...") << endl;
 
     bool loginFlag = false;
+    bool acceptingNew = true;
 
-    sin_size = sizeof their_addr;
-    new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
-    if (new_fd == -1) {
-        perror("accept");
-    }
-
-    inet_ntop(their_addr.ss_family,
-        get_in_addr((struct sockaddr *)&their_addr),
-        s, sizeof s);
-    cout << "server: got connection from " <<  s << endl;
 
     while(1){
+
+        if(acceptingNew){
+            sin_size = sizeof their_addr;
+            new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+            if (new_fd == -1) {
+                perror("accept");
+            }
+
+            inet_ntop(their_addr.ss_family,
+                get_in_addr((struct sockaddr *)&their_addr),
+                s, sizeof s);
+            cout << "server: got connection from " <<  s << endl;
+            acceptingNew = false;
+        }
+
         while(!loginFlag){
             //Send login notice
             if (send(new_fd, "Use Command Login To Login:", 28, 0) == -1)
@@ -161,6 +167,13 @@ int main(){
         else if (cmd[0] == string("send")){
             sendMessage(cmd[1],new_fd,currUser);
         }
+        else if (cmd[0] == string("logout")){
+            if (send(new_fd, "You are now loged out", 25, 0) == -1)
+                perror("send");
+
+            loginFlag = false;
+            acceptingNew = true;
+        }
         else if(cmd[0] == string("quit")){
             break;
         }
@@ -174,6 +187,7 @@ int main(){
 
     return 0;
 }
+
 
 int sendMessage(string cmd, int socket_fd, const string& currUser){
 
