@@ -15,7 +15,7 @@
 
 #define PORT "3490" // the port client will be connecting to
 
-#define MAXDATASIZE 100 // max number of bytes we can get at once
+#define MAXDATASIZE 256 // max number of bytes we can get at once
 
 using namespace std;
 
@@ -87,6 +87,8 @@ int main(int argc, char *argv[]){
 
 
    while(1){
+        bzero(buf,MAXDATASIZE);
+        cout << "wating to receive" << endl;
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
             exit(1);

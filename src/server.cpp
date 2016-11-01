@@ -117,20 +117,19 @@ int main(){
     cout << ("server: waiting for connections...") << endl;
 
     bool loginFlag = false;
-    while(1) {  // main accept() loop
-        sin_size = sizeof their_addr;
-        new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
-        if (new_fd == -1) {
-            perror("accept");
-            continue;
-        }
 
-        inet_ntop(their_addr.ss_family,
-            get_in_addr((struct sockaddr *)&their_addr),
-            s, sizeof s);
-        cout << "server: got connection from " <<  s << endl;
+    sin_size = sizeof their_addr;
+    new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+    if (new_fd == -1) {
+        perror("accept");
+    }
 
+    inet_ntop(their_addr.ss_family,
+        get_in_addr((struct sockaddr *)&their_addr),
+        s, sizeof s);
+    cout << "server: got connection from " <<  s << endl;
 
+    while(1){
         while(!loginFlag){
             //Send login notice
             if (send(new_fd, "Use Command Login To Login:", 28, 0) == -1)
@@ -147,14 +146,16 @@ int main(){
         if(cmd[0] == string("newuser")){
             newUser(cmd[1],new_fd);
         }
+        else if(cmd[0] == string("quit")){
+            break;
+        }
 
-        //tity up everyting
-        delete[] cmd;
-        close(sockfd);
-        close(new_fd);
-
-        break;
     }
+
+    //tity up everyting
+    delete[] cmd;
+    close(sockfd);
+    close(new_fd);
 
     return 0;
 }
@@ -193,6 +194,7 @@ int newUser(string cmd, int socket_fd){
 
             if(send(socket_fd,"User successfully added!", 30, 0) == -1)
                 perror("send");
+            cout << "User "<< username << " successfully added" << endl;
             return 1;
         }
 
@@ -200,6 +202,7 @@ int newUser(string cmd, int socket_fd){
         //the user already exists
         if(send(socket_fd, "User already Exists",25,0) == -1)
             perror("send");
+        cout << "User " << username << " already exists" << endl;
         return USER_EXISTS;
 
     }
@@ -208,6 +211,7 @@ int newUser(string cmd, int socket_fd){
     if(send(socket_fd, "User/password not in bounds",30,0) == -1)
             perror("send");
 
+    cout << "User " << username << "out of bounds" << endl;
     return UP_NOT_IN_BOUNDS;
 
 }
@@ -237,12 +241,14 @@ int login(string cmd, int socket_fd){
     if(it != users.end()){
         if(send(socket_fd, "Login Success",20,0) == -1)
             perror("send");
+        cout << "login successfully" << endl;
         return 1;
 
     }
 
     if(send(socket_fd, "Invalid Username or Password",40,0) == -1)
         perror("send");
+    cout << "Invalid username or password" << endl;
 
     return 0;
 
@@ -261,19 +267,24 @@ void *get_in_addr(struct sockaddr *sa){
 
 string* getCommand(int socket_fd){
     char command[MAXDATASIZE];
+    string cmdString;
     int numbytes = 0;
     string* returns = new string[2];
 
+    while(cmdString.length() == 0){
+        bzero(command,MAXDATASIZE);
 
-    bzero(command,MAXDATASIZE);
+        if ((numbytes = recv(socket_fd, command, MAXDATASIZE - 1, 0)) == -1) {
+            perror("recv");
+            exit(1);
+        }
 
-    if ((numbytes = recv(socket_fd, command, MAXDATASIZE - 1, 0)) == -1) {
-        perror("recv");
-        exit(1);
+        command[numbytes] = '\0';
+
+
+        cmdString = string(command);
     }
-    command[numbytes] = '\0';
-    //cout << command;
-    string cmdString(command);
+
     size_t spacePos = cmdString.find(" ");
     returns[0] = cmdString.substr(0,spacePos);
     returns[1] = cmdString.substr(spacePos + 1);

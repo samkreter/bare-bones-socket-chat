@@ -2,3 +2,5 @@
 (David, David22)
 (Beth, Beth33)
 (Samuel, password)
+(sam, kreter)
+(test, test)
