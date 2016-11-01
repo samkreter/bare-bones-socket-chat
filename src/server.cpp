@@ -23,14 +23,14 @@
 
 
 
-#define PORT "3490"  // the port users will be connecting to
+#define PORT "3491"  // the port users will be connecting to
 
 #define BACKLOG 5 // how many pending connections queue will hold
 #define MAXDATASIZE 256
-#define RECIEVE_MAX 15
+#define RECIEVE_MAX 15 //
 
 
-// Program error codes
+// Program error codes, basicly useless for this but thought i'd add them
 #define USER_EXISTS -1
 #define UP_NOT_IN_BOUNDS -2
 
@@ -38,13 +38,15 @@
 
 using namespace std;
 
+
+//structre to hold all the current users
 using User = struct {
     string username;
     string password;
 };
 
 
-
+//prototypes for all the functions
 int newUser(string cmd, int socket_fd);
 int login(string cmd, int socket_fd, string* currUser);
 int sendMessage(string cmd, int sock_fd, const string& currUser);
@@ -55,6 +57,8 @@ void *get_in_addr(struct sockaddr *sa);
 
 int main(){
 
+
+    //the thousand of varibles needed to run these sockets
     int sockfd, new_fd, numbytes;  // listen on sock_fd, new connection on new_fd
     struct addrinfo hints, *servinfo, *p;
     struct sockaddr_storage their_addr; // connector's address information
@@ -77,6 +81,7 @@ int main(){
     //use same ip address as return address
     hints.ai_flags = AI_PASSIVE;
 
+    //get the info to create the socket
     if ((rv = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0) {
         cerr << "getaddrinfo: " <<  gai_strerror(rv) << endl;
         return 1;
@@ -84,6 +89,7 @@ int main(){
 
     // loop through all the results and bind to the first we can
     for(p = servinfo; p != NULL; p = p->ai_next) {
+
         if ((sockfd = socket(p->ai_family, p->ai_socktype,
                 p->ai_protocol)) == -1) {
             perror("server: socket");
@@ -96,6 +102,7 @@ int main(){
             exit(1);
         }
 
+        //bind to the socket address
         if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
             close(sockfd);
             perror("server: bind");
@@ -107,11 +114,13 @@ int main(){
 
     freeaddrinfo(servinfo); // all done with this structure
 
+
     if (p == NULL)  {
         cerr << "server: failed to bind" << endl;
         exit(1);
     }
 
+    //start listening on the socket
     if (listen(sockfd, BACKLOG) == -1) {
         perror("listen");
         exit(1);
@@ -120,44 +129,56 @@ int main(){
 
     cout << ("server: waiting for connections...") << endl;
 
+    //needed flags for user flow
     bool loginFlag = false;
     bool acceptingNew = true;
 
 
     while(1){
 
+        //accept a new connection
         if(acceptingNew){
+
             sin_size = sizeof their_addr;
             new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+
             if (new_fd == -1) {
                 perror("accept");
             }
 
+            //turn the address from binary to family friendly G rated words
             inet_ntop(their_addr.ss_family,
                 get_in_addr((struct sockaddr *)&their_addr),
                 s, sizeof s);
+
             cout << "server: got connection from " <<  s << endl;
             acceptingNew = false;
         }
 
+        //don't let anyone past unless they got that login
         while(!loginFlag){
+
             //Send login notice
             if (send(new_fd, "Use Command Login To Login:", 28, 0) == -1)
                 perror("send");
 
+
             cmd = getCommand(new_fd);
 
+            //if the getCommand function returns null it means connection was lost
             if(cmd == NULL){
                 cout << "connection with host lost" << endl;
                 acceptingNew = true;
                 break;
             }
 
+            //if they are all logged in set it all up
             if(cmd[0] == string("login") && login(cmd[1],new_fd,&currUser)){
                 loginFlag = true;
             }
         }
 
+        //start looping through recieving and sending messages
         if(loginFlag){
             string* cmd = getCommand(new_fd);
 
@@ -168,6 +189,7 @@ int main(){
             }
 
 
+            //user flow to activate functions for each command
             if(cmd[0] == string("newuser")){
                 newUser(cmd[1],new_fd);
             }
@@ -195,7 +217,7 @@ int main(){
     return 0;
 }
 
-
+//used to send a message with the username of the connected user back to themselves
 int sendMessage(string cmd, int socket_fd, const string& currUser){
 
     if(send(socket_fd,(currUser + ":" + cmd).c_str(), MAXDATASIZE -1, 0) == -1)
@@ -204,8 +226,10 @@ int sendMessage(string cmd, int socket_fd, const string& currUser){
     return 1;
 }
 
+//add a new user to the users.txt file
 int newUser(string cmd, int socket_fd){
 
+    //splits everything up
     size_t spacePos = cmd.find(" ");
     string username = cmd.substr(0,spacePos);
     string password = cmd.substr(spacePos+1);
@@ -220,9 +244,10 @@ int newUser(string cmd, int socket_fd){
         return -1;
     }
 
-
+    //get the list of current users
     vector<User> users = getUsers();
 
+    //check that everything is gucci
     if(username.length() < 32 && password.length() > 3 && password.length() < 9){
 
         //search the currently added users
