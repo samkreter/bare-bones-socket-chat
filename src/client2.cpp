@@ -104,7 +104,7 @@ int main(int argc, char *argv[]){
     while(1){
 
         //TODO finish polling
-        rv = poll(pollData, 1, 500);
+        rv = poll(pollData, 2, 500);
 
         if(rv == -1){
             perror("Polling error");
@@ -113,7 +113,6 @@ int main(int argc, char *argv[]){
             // check for events on receive:
             if (pollData[0].revents & POLLIN) {
                 bzero(buf,MAXDATASIZE);
-                cout << "recevieing" << endl;
                 if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
                     perror("recv");
                     exit(1);
@@ -123,7 +122,7 @@ int main(int argc, char *argv[]){
                 buf[numbytes] = '\0';
                 if(numbytes > 0){
                     //print out the message received from the serveer
-                    cout << "> " << buf << endl << "> ";
+                    cout << "> " << buf << endl;
                 }
             }
             else{

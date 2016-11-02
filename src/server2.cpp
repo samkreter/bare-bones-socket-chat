@@ -59,7 +59,7 @@ using cUser = struct {
 //prototypes for all the functions
 int who(vector<cUser>& currUsers,int new_fd);
 int newUser(string cmd, int socket_fd);
-int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers);
+int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers, int id);
 vector<User> getUsers();
 string* getCommand(int socket_fd, struct pollfd* pollData,bool* msgFlag, int id);
 void *get_in_addr(struct sockaddr *sa);
@@ -253,7 +253,7 @@ void threadFunc(int id,int new_fd, bool* finished,
             }
 
             //if they are all logged in set it all up
-            if(cmd[0] == string("login") && login(cmd[1],new_fd,&currUser,currUsers)){
+            if(cmd[0] == string("login") && login(cmd[1],new_fd,&currUser,currUsers,id)){
                 //add the user to the current users list
                 loginFlag = true;
             }
@@ -284,9 +284,9 @@ void threadFunc(int id,int new_fd, bool* finished,
                 newUser(cmd[1],new_fd);
             }
             else if(cmd[0] == string("msg")){
-                msgFlags[id] = false;
                 if(send(new_fd,msgs[id].c_str(),MAXDATASIZE-1,0) == -1)
                     perror("send error");
+                msgFlags[id] = false;
             }
             else if (cmd[0] == string("who")){
                 who(currUsers,new_fd);
@@ -438,7 +438,7 @@ int who(vector<cUser>& currUsers,int new_fd){
 }
 
 //validates the user's username and password for login status
-int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers){
+int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers, int id){
 
     string username;
     string password;
@@ -474,6 +474,7 @@ int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers){
             *currUser = it->username;
             currUsers.push_back(cUser());
             currUsers.back().username = it->username;
+            currUsers.back().id = id;
             cout << "login successfully" << endl;
             return 1;
         }
@@ -526,7 +527,7 @@ string* getCommand(int socket_fd, struct pollfd* pollData, bool* msgFlags, int i
         }
         else if(rv == 0){
             if(msgFlags[id]){
-                msgFlags[id] = false;
+                //msgFlags[id] = false;
                 returns[0] = string("msg");
                 return returns;
             }
