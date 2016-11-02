@@ -336,8 +336,10 @@ int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& c
     if(username == string("all")){
         msg = currUser + ": " + msg;
         for(cUser user : currUsers){
-            msgs[user.id] = msg;
-            msgFlags[user.id] = true;
+            if(user.username != currUser){
+                msgs[user.id] = msg;
+                msgFlags[user.id] = true;
+            }
         }
         return 1;
     }
