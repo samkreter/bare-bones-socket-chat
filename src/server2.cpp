@@ -59,7 +59,7 @@ using cUser = struct {
 //prototypes for all the functions
 int who(vector<cUser>& currUsers,int new_fd);
 int newUser(string cmd, int socket_fd);
-int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers, int id);
+int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers, int id,bool* msgFlags, vector<string>& msgs);
 vector<User> getUsers();
 string* getCommand(int socket_fd, struct pollfd* pollData,bool* msgFlag, int id);
 void *get_in_addr(struct sockaddr *sa);
@@ -253,7 +253,7 @@ void threadFunc(int id,int new_fd, bool* finished,
             }
 
             //if they are all logged in set it all up
-            if(cmd[0] == string("login") && login(cmd[1],new_fd,&currUser,currUsers,id)){
+            if(cmd[0] == string("login") && login(cmd[1],new_fd,&currUser,currUsers,id, msgFlags, msgs)){
                 //add the user to the current users list
                 loginFlag = true;
             }
@@ -328,7 +328,7 @@ int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& c
 
     //handle the boadcast case
     if(username == string("all")){
-        msg = currUser + ": " msg;
+        msg = currUser + ": " + msg;
         for(cUser user : currUsers){
             msgs[user.id] = msg;
             msgFlags[user.id] = true;
@@ -439,7 +439,8 @@ int who(vector<cUser>& currUsers,int new_fd){
 }
 
 //validates the user's username and password for login status
-int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers, int id){
+int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers,
+    int id, bool* msgFlags, vector<string>& msgs){
 
     string username;
     string password;
@@ -472,6 +473,13 @@ int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers, 
 
             if(send(socket_fd, "Login Confirmed",20,0) == -1)
                 perror("send");
+
+            //broadcast the user has joined
+            for(cUser user : currUsers){
+                msgs[user.id] = string(it->username + " has joined");
+                msgFlags[user.id] = true;
+            }
+
             *currUser = it->username;
             currUsers.push_back(cUser());
             currUsers.back().username = it->username;
