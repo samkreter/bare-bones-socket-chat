@@ -122,7 +122,8 @@ int main(int argc, char *argv[]){
                 buf[numbytes] = '\0';
                 if(numbytes > 0){
                     //print out the message received from the serveer
-                    cout << "> " << buf << endl;
+                    cout << "> " << buf << endl << "> ";
+                    cout.flush();
                 }
             }
             else{
@@ -146,3 +147,5 @@ int main(int argc, char *argv[]){
 
     return 0;
 }
+
+//http://beej.us/guide/bgnet/output/html/multipage/pollman.html
