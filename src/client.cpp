@@ -1,5 +1,8 @@
 /*
-** client.c -- a stream socket client demo
+** Sam Kreter
+** 11/1/16
+** This is the client side to a socket chat application
+**  complie the code and run ./client [IP Address] to start chatting
 */
 #include <iostream>
 #include <stdlib.h>

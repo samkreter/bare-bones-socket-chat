@@ -1,5 +1,8 @@
 /*
-** server.c -- a stream socket server demo
+** Sam Kreter
+** 11/1/16
+** This is the server for a chat application. One client will connect to the
+**  server interact over sockets
 */
 
 #include <iostream>
