@@ -17,11 +17,7 @@
 
 #define MAXDATASIZE 256 // max number of bytes we can get at once
 
-#define TIMEOUT 1
-
 using namespace std;
-
-
 
 // get sockaddr, IPv4 or IPv6:
 // Really nice function I found that looks really smart to other people
@@ -108,27 +104,14 @@ int main(int argc, char *argv[]){
         }
         //get the users input everytime something is received from the server
         string sUserInput;
+        getline(cin,sUserInput);
 
-        bool isTimeout = true;
-        time_t t = time(NULL) + TIMEOUT;   // will require time.h
-        while (time(NULL)<t) {
-            isTimeout = false;
-            if (cin.peek()!=EOF) {
-                getline(cin,sUserInput);
+        //copy it to a cstring
+        strcpy (userInput, sUserInput.c_str());
 
-            //copy it to a cstring
-            strcpy (userInput, sUserInput.c_str());
-
-            //send the input to the server
-            if (send(sockfd, userInput, MAXDATASIZE, 0) == -1)
-                perror("send");
-                }
-        }
-        if(isTimeout){
-            cout << "good";
-        }
-
-
+        //send the input to the server
+        if (send(sockfd, userInput, MAXDATASIZE, 0) == -1)
+            perror("send");
     }
 
     //close the socket

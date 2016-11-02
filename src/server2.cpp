@@ -299,9 +299,9 @@ void threadFunc(int id,int new_fd, bool* finished,
 
                 loginFlag = false;
 
-                remove_if(currUsers.begin(),currUsers.end(),[currUser](cUser u){
+                currUsers.erase(remove_if(currUsers.begin(), currUsers.end(),[currUser](cUser u){
                     return (u.username == currUser);
-                });
+                }));
 
                 break;
 
@@ -323,6 +323,18 @@ int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& c
     string username = cmd.substr(0,spacePos);
     cout << username << endl;
     string msg = cmd.substr(spacePos+1);
+
+
+    //handle the boadcast case
+    if(username == string("all")){
+        for(cUser user : currUsers){
+            msgs[user.id] = msg;
+            msgFlags[user.id] = true;
+        }
+        send(new_fd, " ", 2, 0);
+        return 1;
+    }
+
 
     auto it = find_if(currUsers.begin(), currUsers.end(),[username](cUser u){
         return (u.username == username);

@@ -90,7 +90,6 @@ int main(int argc, char *argv[]){
    while(1){
         //wait to recieve from the server
         bzero(buf,MAXDATASIZE);
-        cout << "wating to receive" << endl;
         if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv");
             exit(1);
@@ -112,6 +111,10 @@ int main(int argc, char *argv[]){
         //send the input to the server
         if (send(sockfd, userInput, MAXDATASIZE, 0) == -1)
             perror("send");
+
+        if(sUserInput == string("logout")){
+            break;
+        }
     }
 
     //close the socket
