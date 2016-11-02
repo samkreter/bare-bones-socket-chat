@@ -28,7 +28,7 @@
 
 #define PORT "3491"  // the port users will be connecting to
 
-#define BACKLOG 5 // how many pending connections queue will hold
+#define BACKLOG 10 // how many pending connections queue will hold
 #define MAXDATASIZE 256
 #define RECIEVE_MAX 15 //
 
@@ -138,10 +138,10 @@ int main(){
 
 
     while(1){
-
+        loginFlag = false;
         //accept a new connection
         if(acceptingNew){
-
+            cout << "accetpeted" << endl;
             sin_size = sizeof their_addr;
             new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
 
@@ -158,61 +158,63 @@ int main(){
             acceptingNew = false;
         }
 
-        //don't let anyone past unless they got that login
-        while(!loginFlag){
 
-            //Send login notice
-            if (send(new_fd, "Use Command Login To Login:", 28, 0) == -1)
-                perror("send");
+        //Send login notice
+        if (send(new_fd, "Use Command Login To Login:", 28, 0) == -1)
+            perror("send");
+        while(1){
+            //don't let anyone past unless they got that login
+            while(!loginFlag){
 
 
-            cmd = getCommand(new_fd);
+                cmd = getCommand(new_fd);
 
-            //if the getCommand function returns null it means connection was lost
-            if(cmd == NULL){
-                cout << "connection with host lost" << endl;
-                acceptingNew = true;
-                break;
+                //if the getCommand function returns null it means connection was lost
+                if(cmd == NULL){
+                    acceptingNew = true;
+                    break;
+                }
+
+                //if they are all logged in set it all up
+                if(cmd[0] == string("login") && login(cmd[1],new_fd,&currUser)){
+                    loginFlag = true;
+                }
+                else{
+                    send(new_fd, "Server: Denied. Please login first.", 40, 0);
+                }
             }
 
-            //if they are all logged in set it all up
-            if(cmd[0] == string("login") && login(cmd[1],new_fd,&currUser)){
-                loginFlag = true;
-            }
-        }
+            //start looping through recieving and sending messages
+            if(loginFlag){
+                string* cmd = getCommand(new_fd);
 
-        //start looping through recieving and sending messages
-        if(loginFlag){
-            string* cmd = getCommand(new_fd);
-
-            //connection to the socket was lost
-            if(cmd == NULL){
-                cout << "Client connection lost" << endl;
-                break;
-            }
+                //connection to the socket was lost
+                if(cmd == NULL){
+                    acceptingNew = true;
+                    break;
+                }
 
 
-            //user flow to activate functions for each command
-            if(cmd[0] == string("newuser")){
-                newUser(cmd[1],new_fd);
-            }
-            else if (cmd[0] == string("send")){
-                sendMessage(cmd[1],new_fd,currUser);
-            }
-            else if (cmd[0] == string("logout")){
-                if (send(new_fd, "You are now loged out", 25, 0) == -1)
-                    perror("send");
+                //user flow to activate functions for each command
+                if(cmd[0] == string("newuser")){
+                    newUser(cmd[1],new_fd);
+                }
+                else if (cmd[0] == string("send")){
+                    sendMessage(cmd[1],new_fd,currUser);
+                }
+                else if (cmd[0] == string("logout")){
+                    if (send(new_fd, "Server: Tom left.", 20, 0) == -1)
+                        perror("send");
 
-                loginFlag = false;
-                acceptingNew = true;
-            }
-            else if(cmd[0] == string("quit")){
-                break;
-            }
-            else {
-                if(send((new_fd),"Invalid Command",20,0) == -1)
-                    perror("send");
-                continue;
+                    loginFlag = false;
+                    acceptingNew = true;
+                    break;
+                }
+                else {
+                    if(send((new_fd),"Invalid Command",20,0) == -1)
+                        perror("send");
+                    continue;
+                }
             }
         }
     }
@@ -228,7 +230,7 @@ int main(){
 //used to send a message with the username of the connected user back to themselves
 int sendMessage(string cmd, int socket_fd, const string& currUser){
 
-    if(send(socket_fd,(currUser + ":" + cmd).c_str(), MAXDATASIZE -1, 0) == -1)
+    if(send(socket_fd,(currUser + ": " + cmd).c_str(), MAXDATASIZE -1, 0) == -1)
         perror("send");
 
     return 1;
@@ -324,7 +326,7 @@ int login(string cmd, int socket_fd, string* currUser){
     //if the find function found a match, then add the users name and
     // send confirmation
     if(it != users.end()){
-        if(send(socket_fd, "Login Success",20,0) == -1)
+        if(send(socket_fd, ("Server: "+ it->username+" joins").c_str(),MAXDATASIZE - 1,0) == -1)
             perror("send");
         *currUser = it->username;
         cout << "login successfully" << endl;

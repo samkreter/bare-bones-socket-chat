@@ -41,6 +41,7 @@ int main(int argc, char *argv[]){
     int rv;
     char s[INET6_ADDRSTRLEN];
     char userInput[MAXDATASIZE];
+    bool logout = false;
 
     if (argc != 2) {
         cerr << "usage: client hostname" << endl;
@@ -85,10 +86,10 @@ int main(int argc, char *argv[]){
     // for the awsome function with all the bit operators, you da best
     inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
             s, sizeof s);
-    cout << "client: connecting to " <<  s << endl;
+    //cout << "client: connecting to " <<  s << endl;
 
     freeaddrinfo(servinfo); // all done with this structure
-
+    cout << "My chat room client. Version One." << endl;
 
    while(1){
         //wait to recieve from the server
@@ -102,8 +103,13 @@ int main(int argc, char *argv[]){
         buf[numbytes] = '\0';
         if(numbytes > 0){
             //print out the message received from the serveer
-            cout << buf << endl;
+            cout << "> " <<  buf << endl << "> ";
         }
+
+        if(logout){
+            break;
+        }
+
         //get the users input everytime something is received from the server
         string sUserInput;
         getline(cin,sUserInput);
@@ -116,7 +122,7 @@ int main(int argc, char *argv[]){
             perror("send");
 
         if(sUserInput == string("logout")){
-            break;
+            logout = true;
         }
     }
 
