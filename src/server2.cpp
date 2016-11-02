@@ -57,15 +57,15 @@ using cUser = struct {
 
 
 //prototypes for all the functions
-int who(vector<string>& currUsers,int new_fd);
+int who(vector<cUser>& currUsers,int new_fd);
 int newUser(string cmd, int socket_fd);
-int login(string cmd, int socket_fd, string* currUser,vector<string>& currUsers);
+int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers);
 int sendMessage(string cmd, int sock_fd, const string& currUser);
 vector<User> getUsers();
 string* getCommand(int socket_fd, struct pollfd* pollData,bool* msgFlag, int id);
 void *get_in_addr(struct sockaddr *sa);
 void threadFunc(int id,int new_fd, bool* finished,
-    bool* msgFlags, vector<string>& msgs,vector<string>& currUsers);
+    bool* msgFlags, vector<string>& msgs,vector<cUser>& currUsers);
 
 
 int main(){
@@ -84,7 +84,7 @@ int main(){
 
 
 
-    vector<string> currUsers;
+    vector<cUser> currUsers;
     bool finished[MAX_NUM_THREADS];
     bool msgFlags[MAX_NUM_THREADS];
     vector<string> msgs(MAX_NUM_THREADS);
@@ -223,7 +223,7 @@ int main(){
 
 //TODO BROCAST LOGOUT
 void threadFunc(int id,int new_fd, bool* finished,
-    bool* msgFlags, vector<string>& msgs, vector<string>& currUsers){
+    bool* msgFlags, vector<string>& msgs, vector<cUser>& currUsers){
     cout << "spawned thread: " << id << endl;
     //needed flags for user flow
     bool loginFlag = false;
@@ -300,7 +300,11 @@ void threadFunc(int id,int new_fd, bool* finished,
                     perror("send");
 
                 loginFlag = false;
-                currUsers.erase(std::remove(currUsers.begin(), currUsers.end(), currUser), currUsers.end());
+
+                remove_if(currUsers.begin(),currUsers.end(),[currUser](cUser u){
+                    return (u.username == currUser);
+                });
+
                 break;
 
             }
@@ -386,11 +390,11 @@ int newUser(string cmd, int socket_fd){
 
 }
 
-int who(vector<string>& currUsers,int new_fd){
+int who(vector<cUser>& currUsers,int new_fd){
     string names("Users:");
 
-    for(string user : currUsers){
-        names += (" " + user);
+    for(cUser user : currUsers){
+        names += (" " + user.username);
     }
 
     if(names.length() > MAXDATASIZE - 1){
@@ -406,7 +410,7 @@ int who(vector<string>& currUsers,int new_fd){
 }
 
 //validates the user's username and password for login status
-int login(string cmd, int socket_fd, string* currUser,vector<string>& currUsers){
+int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers){
 
     string username;
     string password;
@@ -431,14 +435,17 @@ int login(string cmd, int socket_fd, string* currUser,vector<string>& currUsers)
     //if the find function found a match, then add the users name and
     // send confirmation
     if(it != users.end()){
-        auto currUsersIt = find(currUsers.begin(),currUsers.end(),username);
+        auto currUsersIt = find_if(currUsers.begin(),currUsers.end(),[username](cUser u){
+            return (u.username == username);
+        });
 
         if(currUsersIt == currUsers.end()){
 
             if(send(socket_fd, "Login Success",20,0) == -1)
                 perror("send");
             *currUser = it->username;
-            currUsers.push_back(it->username);
+            currUsers.push_back(cUser());
+            currUsers.back().username = it->username;
             cout << "login successfully" << endl;
             return 1;
         }

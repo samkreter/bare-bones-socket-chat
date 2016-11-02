@@ -36,15 +36,16 @@ vector<User> test(){
 }
 
 int main () {
-    vector<User> t = test();
-    string name("To");
-    auto it = find_if(t.begin(),t.end(),[name](User u){
-        return (u.username == name);
+    vector<User> users = test();
+    string currUser("Tom");
+
+    remove_if(users.begin(),users.end(),[currUser](User u){
+        return (u.username == currUser);
     });
-    if(it == t.end()){
-        cout << "big dog";
+
+    for(auto u : users){
+        cout << u.username << endl;
     }
-    cout << (*it).username;
 
     return 0;
 }
