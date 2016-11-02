@@ -33,6 +33,8 @@ sys/wait.h
 -
 signal.h
 -
+sys/poll.h
+-
 vector
 -
 fstream

@@ -15,6 +15,7 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <sys/poll.h>
 
 #include <vector>
 #include <fstream>
@@ -49,6 +50,11 @@ using User = struct {
     string password;
 };
 
+using cUser = struct {
+    string username;
+    int id;
+};
+
 
 //prototypes for all the functions
 int who(vector<string>& currUsers,int new_fd);
@@ -56,10 +62,10 @@ int newUser(string cmd, int socket_fd);
 int login(string cmd, int socket_fd, string* currUser,vector<string>& currUsers);
 int sendMessage(string cmd, int sock_fd, const string& currUser);
 vector<User> getUsers();
-string* getCommand(int sock_fd);
+string* getCommand(int socket_fd, struct pollfd* pollData,bool* msgFlag, int id);
 void *get_in_addr(struct sockaddr *sa);
 void threadFunc(int id,int new_fd, bool* finished,
-    bool* msgFlag, vector<string>& msgs,vector<string>& currUsers);
+    bool* msgFlags, vector<string>& msgs,vector<string>& currUsers);
 
 
 int main(){
@@ -212,9 +218,12 @@ int main(){
     return 0;
 }
 
+
+
+
 //TODO BROCAST LOGOUT
 void threadFunc(int id,int new_fd, bool* finished,
-    bool* msgFlag, vector<string>& msgs, vector<string>& currUsers){
+    bool* msgFlags, vector<string>& msgs, vector<string>& currUsers){
     cout << "spawned thread: " << id << endl;
     //needed flags for user flow
     bool loginFlag = false;
@@ -222,6 +231,11 @@ void threadFunc(int id,int new_fd, bool* finished,
     char buffer[MAXDATASIZE];
     string* cmd;
     string currUser;
+    struct pollfd pollData[1];
+
+
+    pollData[0].fd = new_fd;
+    pollData[0].events = POLLIN;
 
 
     while(1){
@@ -233,7 +247,7 @@ void threadFunc(int id,int new_fd, bool* finished,
                 perror("send");
 
 
-            cmd = getCommand(new_fd);
+            cmd = getCommand(new_fd,pollData,msgFlags,id);
 
             //if the getCommand function returns null it means connection was lost
             if(cmd == NULL){
@@ -257,7 +271,7 @@ void threadFunc(int id,int new_fd, bool* finished,
         }
         //start looping through recieving and sending messages
         if(loginFlag){
-            string* cmd = getCommand(new_fd);
+            string* cmd = getCommand(new_fd,pollData,msgFlags,id);
 
             //connection to the socket was lost
             if(cmd == NULL){
@@ -269,6 +283,11 @@ void threadFunc(int id,int new_fd, bool* finished,
             //user flow to activate functions for each command
             if(cmd[0] == string("newuser")){
                 newUser(cmd[1],new_fd);
+            }
+            else if(cmd[0] == string("msg")){
+                msgFlags[id] = false;
+                if(send(new_fd,msgs[id].c_str(),MAXDATASIZE-1,0) == -1)
+                    perror("send error");
             }
             else if (cmd[0] == string("who")){
                 who(currUsers,new_fd);
@@ -450,12 +469,13 @@ void *get_in_addr(struct sockaddr *sa){
 
 
 //used to parse input from the users and parsing out the current command
-string* getCommand(int socket_fd){
+string* getCommand(int socket_fd, struct pollfd* pollData, bool* msgFlags, int id){
 
     char command[MAXDATASIZE];
     string cmdString;
-    int numbytes = 0;
+    int numbytes = 0,rv = -1;
     string* returns = new string[2];
+
 
     //keep count of number of empty data recieved,
     // if more than max number was recieved, we know that the client has
@@ -463,24 +483,40 @@ string* getCommand(int socket_fd){
     size_t count = 0;
 
     while(cmdString.length() == 0){
-        //zero out the command just in case
-        bzero(command,MAXDATASIZE);
 
-        if ((numbytes = recv(socket_fd, command, MAXDATASIZE - 1, 0)) == -1) {
-            perror("recv");
-            exit(1);
+        rv = poll(pollData, 1, 500);
+
+        if(rv == -1){
+            perror("Error wiht polling");
         }
+        else if(rv == 0){
+            if(msgFlags[id]){
+                msgFlags[id] = false;
+                returns[0] = string("msg");
+                return returns;
+            }
+        }
+        else{
+            //zero out the command just in case
+            bzero(command,MAXDATASIZE);
 
-        //add null terminator to the received string
-        command[numbytes] = '\0';
 
-        //convert to c++ string
-        cmdString = string(command);
+            if ((numbytes = recv(socket_fd, command, MAXDATASIZE - 1, 0)) == -1) {
+                perror("recv");
+                exit(1);
+            }
 
-        //check for the client disconnect
-        count++;
-        if(count > RECIEVE_MAX)
-            return NULL;
+            //add null terminator to the received string
+            command[numbytes] = '\0';
+
+            //convert to c++ string
+            cmdString = string(command);
+
+            //check for the client disconnect
+            count++;
+            if(count > RECIEVE_MAX)
+                return NULL;
+        }
     }
 
     //finish parsing input and return
