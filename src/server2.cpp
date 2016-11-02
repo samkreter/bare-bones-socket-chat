@@ -3,10 +3,8 @@
 */
 
 /*TODO
-    fix > for sending messages
     add header to client and server
     max people connected
-    no > when sending message
     server output
 
 */
@@ -161,7 +159,7 @@ int main(){
         exit(1);
     }
 
-    cout << ("server: waiting for connections...") << endl;
+    cout << "My chat room server. Version Two." << endl;
 
 
 
@@ -187,7 +185,7 @@ int main(){
             perror("accept");
         }
         else if(new_fd == 0){
-            cout << "testing";
+            //cout << "testing";
             continue;
         }
         //turn the address from binary to family friendly G rated words
@@ -196,7 +194,7 @@ int main(){
             s, sizeof s);
 
 
-        cout << "server: got connection from " <<  s << endl;
+        //cout << "server: got connection from " <<  s << endl;
 
         int nextIndex = ordering.front();
         ordering.pop();
@@ -229,7 +227,7 @@ int main(){
 //TODO BROCAST LOGOUT
 void threadFunc(int id,int new_fd, bool* finished,
     bool* msgFlags, vector<string>& msgs, vector<cUser>& currUsers){
-    cout << "spawned thread: " << id << endl;
+
     //needed flags for user flow
     bool loginFlag = false;
     bool connectionLost = false;
@@ -309,6 +307,8 @@ void threadFunc(int id,int new_fd, bool* finished,
 
                 loginFlag = false;
 
+                cout << currUser + " logout." << endl;
+
                 currUsers.erase(remove_if(currUsers.begin(), currUsers.end(),[currUser](cUser u){
                     return (u.username == currUser);
                 }));
@@ -337,13 +337,16 @@ int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& c
  bool* msgFlags, vector<string>& msgs){
     size_t spacePos = cmd.find(" ");
     string username = cmd.substr(0,spacePos);
-    cout << username << endl;
+
     string msg = cmd.substr(spacePos+1);
 
 
     //handle the boadcast case
     if(username == string("all")){
         msg = currUser + ": " + msg;
+
+        cout << msg << endl;
+
         for(cUser user : currUsers){
             if(user.username != currUser){
                 msgs[user.id] = msg;
@@ -359,6 +362,9 @@ int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& c
     });
 
     if(it != currUsers.end()){
+
+        cout << currUser + " (to " + username + "): " + msg << endl;
+
         msg = currUser + ": " + msg;
         msgs[it->id] = msg;
         msgFlags[it->id] = true;
@@ -495,12 +501,13 @@ int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers,
                 msgs[user.id] = string(it->username + " has joined");
                 msgFlags[user.id] = true;
             }
+            cout << it->username + " Login." << endl;
 
             *currUser = it->username;
             currUsers.push_back(cUser());
             currUsers.back().username = it->username;
             currUsers.back().id = id;
-            cout << "login successfully" << endl;
+
             return 1;
         }
         else{
