@@ -140,6 +140,10 @@ int main(int argc, char *argv[]){
                 //send the input to the server
                 if (send(sockfd, userInput, MAXDATASIZE, 0) == -1)
                     perror("send");
+
+                if(sUserInput == string("logout")){
+                    break;
+                }
             }
         }
 

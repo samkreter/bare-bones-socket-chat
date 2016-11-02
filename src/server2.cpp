@@ -2,6 +2,14 @@
 ** server.c -- a stream socket server demo
 */
 
+/*TODO
+    fix > for sending messages
+    add header to client and server
+    max people connected
+    no > when sending message
+
+*/
+
 #include <iostream>
 #include <string>
 #include <stdlib.h>
