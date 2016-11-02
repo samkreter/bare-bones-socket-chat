@@ -120,9 +120,12 @@ int main(int argc, char *argv[]){
 
                 //add the nul terminator to stop the string of data
                 buf[numbytes] = '\0';
+
+                //if recieved actual data print it otherwise ignore it
                 if(numbytes > 0){
                     //print out the message received from the serveer
                     cout << "> " << buf << endl << "> ";
+                    //the last > gets caught if you don't flush standard out
                     cout.flush();
                 }
             }
