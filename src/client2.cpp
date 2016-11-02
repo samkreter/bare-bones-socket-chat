@@ -144,6 +144,10 @@ int main(int argc, char *argv[]){
                 if(sUserInput == string("logout")){
                     break;
                 }
+                else if(sUserInput.find("send") !=  string::npos){
+                    cout << "> ";
+                    cout.flush();
+                }
             }
         }
 

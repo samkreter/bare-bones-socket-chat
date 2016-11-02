@@ -7,6 +7,7 @@
     add header to client and server
     max people connected
     no > when sending message
+    server output
 
 */
 
@@ -361,8 +362,7 @@ int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& c
         msg = currUser + ":" + msg;
         msgs[it->id] = msg;
         msgFlags[it->id] = true;
-        //Need to make sure the user can start to send commands again
-        send(new_fd, " ", 2, 0);
+
         return 1;
     }
 
