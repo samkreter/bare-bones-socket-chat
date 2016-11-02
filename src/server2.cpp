@@ -304,6 +304,12 @@ void threadFunc(int id,int new_fd, bool* finished,
                     return (u.username == currUser);
                 }));
 
+                //broadcast the user has joined
+                for(cUser user : currUsers){
+                    msgs[user.id] = string(currUser + " left");
+                    msgFlags[user.id] = true;
+                }
+
                 break;
 
             }
