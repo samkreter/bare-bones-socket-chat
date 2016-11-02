@@ -4,6 +4,11 @@
 #include <vector>
 #include <algorithm>
 
+#include <thread>
+#include <atomic>
+
+
+
 using namespace std;
 
 
@@ -35,17 +40,21 @@ vector<User> test(){
     return users;
 }
 
-int main () {
-    vector<User> users = test();
-    string currUser("Tom");
 
-    remove_if(users.begin(),users.end(),[currUser](User u){
-        return (u.username == currUser);
-    });
+int main(){
+    atomic<bool> flag(false);
+    thread([&]
+    {
+        this_thread::sleep_for(chrono::seconds(5));
 
-    for(auto u : users){
-        cout << u.username << endl;
-    }
+        if (!flag)
+            terminate();
+    }).detach();
+
+    string s;
+    getline(std::cin, s);
+    flag = true;
+    cout << s << '\n';
 
     return 0;
 }

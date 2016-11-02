@@ -60,13 +60,11 @@ using cUser = struct {
 int who(vector<cUser>& currUsers,int new_fd);
 int newUser(string cmd, int socket_fd);
 int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers);
-int sendMessage(string cmd, int sock_fd, const string& currUser);
 vector<User> getUsers();
 string* getCommand(int socket_fd, struct pollfd* pollData,bool* msgFlag, int id);
 void *get_in_addr(struct sockaddr *sa);
-void threadFunc(int id,int new_fd, bool* finished,
-    bool* msgFlags, vector<string>& msgs,vector<cUser>& currUsers);
-
+void threadFunc(int id,int new_fd, bool* finished, bool* msgFlags, vector<string>& msgs,vector<cUser>& currUsers);
+int sendMessage(string cmd, int new_fd,const string& currUser, vector<cUser>& currUsers, bool* msgFlags, vector<string>& msgs);
 
 int main(){
 
@@ -293,7 +291,7 @@ void threadFunc(int id,int new_fd, bool* finished,
                 who(currUsers,new_fd);
             }
             else if (cmd[0] == string("send")){
-                sendMessage(cmd[1],new_fd,currUser);
+                sendMessage(cmd[1], new_fd, currUser, currUsers, msgFlags, msgs);
             }
             else if (cmd[0] == string("logout")){
                 if (send(new_fd, "You are now loged out", 25, 0) == -1)
@@ -319,12 +317,30 @@ void threadFunc(int id,int new_fd, bool* finished,
 }
 
 //used to send a message with the username of the connected user back to themselves
-int sendMessage(string cmd, int socket_fd, const string& currUser){
+int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& currUsers,
+ bool* msgFlags, vector<string>& msgs){
+    size_t spacePos = cmd.find(" ");
+    string username = cmd.substr(0,spacePos);
+    cout << username << endl;
+    string msg = cmd.substr(spacePos+1);
 
-    if(send(socket_fd,(currUser + ":" + cmd).c_str(), MAXDATASIZE -1, 0) == -1)
-        perror("send");
+    auto it = find_if(currUsers.begin(), currUsers.end(),[username](cUser u){
+        return (u.username == username);
+    });
 
-    return 1;
+    if(it != currUsers.end()){
+        msg = currUser + ":" + msg;
+        msgs[it->id] = msg;
+        msgFlags[it->id] = true;
+        //Need to make sure the user can start to send commands again
+        send(new_fd, " ", 2, 0);
+        return 1;
+    }
+
+    if(send(new_fd, "Invalid UserID to send message", 32, 0) == -1)
+        perror("Another send error bro");
+
+    return 0;
 }
 
 //add a new user to the users.txt file
