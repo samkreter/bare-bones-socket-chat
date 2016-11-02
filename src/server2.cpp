@@ -151,9 +151,7 @@ int main(){
         perror("listen");
         exit(1);
     }
-    tv.tv_sec = 3;  /* 30 Secs Timeout */
-    tv.tv_usec = 0;
-    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
+
     cout << ("server: waiting for connections...") << endl;
 
 

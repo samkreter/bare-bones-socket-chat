@@ -6,6 +6,7 @@
 
 #include <thread>
 #include <atomic>
+#include <sys/poll.h>
 
 
 
@@ -42,19 +43,28 @@ vector<User> test(){
 
 
 int main(){
-    atomic<bool> flag(false);
-    thread([&]
-    {
-        this_thread::sleep_for(chrono::seconds(5));
+    struct pollfd pollData[1];
 
-        if (!flag)
-            terminate();
-    }).detach();
+    int rv = -1;
+    string name;
+    pollData[0].fd = fileno(stdin);
+    pollData[0].events = POLLIN;
 
-    string s;
-    getline(std::cin, s);
-    flag = true;
-    cout << s << '\n';
+
+    while(1){
+        rv = poll(pollData, 1, 1000);
+
+        if(rv == 0){
+            cout << "nothing yet" << endl;
+        }
+        else{
+            cin >> name;
+            cout << "we got " << name << endl;
+        }
+    }
+
+
+
 
     return 0;
 }

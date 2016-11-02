@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/poll.h>
 
 #include <arpa/inet.h>
 
@@ -38,6 +39,8 @@ int main(int argc, char *argv[]){
     int rv;
     char s[INET6_ADDRSTRLEN];
     char userInput[MAXDATASIZE];
+    struct pollfd pollData[2];
+
 
     if (argc != 2) {
         cerr << "usage: client hostname" << endl;
@@ -87,31 +90,56 @@ int main(int argc, char *argv[]){
     freeaddrinfo(servinfo); // all done with this structure
     cout << "My chat room server. Version Two." << endl;
 
-   while(1){
-        //wait to recieve from the server
-        bzero(buf,MAXDATASIZE);
 
-        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-            perror("recv");
-            exit(1);
+
+
+
+    pollData[0].fd = sockfd;
+    pollData[0].events = POLLIN;
+
+    pollData[1].fd = fileno(stdin);
+    pollData[1].events = POLLIN;
+
+
+    while(1){
+
+        //TODO finish polling
+        rv = poll(pollData, 1, 500);
+
+        if(rv == -1){
+            perror("Polling error");
+        }
+        else if (rv != 0){
+            // check for events on receive:
+            if (pollData[0].revents & POLLIN) {
+                bzero(buf,MAXDATASIZE);
+                cout << "recevieing" << endl;
+                if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+                    perror("recv");
+                    exit(1);
+                }
+
+                //add the nul terminator to stop the string of data
+                buf[numbytes] = '\0';
+                if(numbytes > 0){
+                    //print out the message received from the serveer
+                    cout << "> " << buf << endl << "> ";
+                }
+            }
+            else{
+                //get the users input everytime something is received from the server
+                string sUserInput;
+                getline(cin,sUserInput);
+
+                //copy it to a cstring
+                strcpy (userInput, sUserInput.c_str());
+
+                //send the input to the server
+                if (send(sockfd, userInput, MAXDATASIZE, 0) == -1)
+                    perror("send");
+            }
         }
 
-        //add the nul terminator to stop the string of data
-        buf[numbytes] = '\0';
-        if(numbytes > 0){
-            //print out the message received from the serveer
-            cout << "> " << buf << endl << "> ";
-        }
-        //get the users input everytime something is received from the server
-        string sUserInput;
-        getline(cin,sUserInput);
-
-        //copy it to a cstring
-        strcpy (userInput, sUserInput.c_str());
-
-        //send the input to the server
-        if (send(sockfd, userInput, MAXDATASIZE, 0) == -1)
-            perror("send");
     }
 
     //close the socket
