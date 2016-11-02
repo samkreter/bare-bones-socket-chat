@@ -359,7 +359,7 @@ int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& c
     });
 
     if(it != currUsers.end()){
-        msg = currUser + ":" + msg;
+        msg = currUser + ": " + msg;
         msgs[it->id] = msg;
         msgFlags[it->id] = true;
 

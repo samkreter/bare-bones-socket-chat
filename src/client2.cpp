@@ -124,7 +124,7 @@ int main(int argc, char *argv[]){
                 //if recieved actual data print it otherwise ignore it
                 if(numbytes > 0){
                     //print out the message received from the serveer
-                    cout << "> " << buf << endl << "> ";
+                    cout << endl << "> " << buf << endl << "> ";
                     //the last > gets caught if you don't flush standard out
                     cout.flush();
                 }
