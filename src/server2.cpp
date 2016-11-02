@@ -259,6 +259,9 @@ void threadFunc(int id,int new_fd, bool* finished,
                 //add the user to the current users list
                 loginFlag = true;
             }
+            else{
+                send(new_fd, "Server: Denied. Please login first.", 40, 0);
+            }
         }
 
         //make sure connection isn't lost during logins
@@ -331,7 +334,7 @@ int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& c
             msgs[user.id] = msg;
             msgFlags[user.id] = true;
         }
-        send(new_fd, " ", 2, 0);
+        //send(new_fd, " ", 2, 0);
         return 1;
     }
 
@@ -469,7 +472,7 @@ int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers){
 
         if(currUsersIt == currUsers.end()){
 
-            if(send(socket_fd, "Login Success",20,0) == -1)
+            if(send(socket_fd, "Login Confirmed",20,0) == -1)
                 perror("send");
             *currUser = it->username;
             currUsers.push_back(cUser());

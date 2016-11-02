@@ -141,7 +141,6 @@ int main(){
         loginFlag = false;
         //accept a new connection
         if(acceptingNew){
-            cout << "accetpeted" << endl;
             sin_size = sizeof their_addr;
             new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
 

@@ -82,10 +82,10 @@ int main(int argc, char *argv[]){
     // for the awsome function with all the bit operators, you da best
     inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
             s, sizeof s);
-    cout << "client: connecting to " <<  s << endl;
+    //cout << "client: connecting to " <<  s << endl;
 
     freeaddrinfo(servinfo); // all done with this structure
-
+    cout << "My chat room server. Version Two." << endl;
 
    while(1){
         //wait to recieve from the server
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]){
         buf[numbytes] = '\0';
         if(numbytes > 0){
             //print out the message received from the serveer
-            cout << buf << endl;
+            cout << "> " << buf << endl << "> ";
         }
         //get the users input everytime something is received from the server
         string sUserInput;
