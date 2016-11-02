@@ -334,7 +334,6 @@ int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& c
             msgs[user.id] = msg;
             msgFlags[user.id] = true;
         }
-        //send(new_fd, " ", 2, 0);
         return 1;
     }
 
@@ -422,7 +421,7 @@ int newUser(string cmd, int socket_fd){
 }
 
 int who(vector<cUser>& currUsers,int new_fd){
-    string names("Users:");
+    string names;
 
     for(cUser user : currUsers){
         names += (" " + user.username);
