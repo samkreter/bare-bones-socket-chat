@@ -1,5 +1,9 @@
 /*
-** client.c -- a stream socket client demo
+** Sam Kreter
+** 11/1/16
+** version 2
+** This is the client side to a socket chat application with multiple conncetions
+**  complie the code and run ./client2 [IP Address] to start chatting
 */
 #include <iostream>
 #include <stdlib.h>
@@ -10,7 +14,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <sys/poll.h>
+#include <sys/poll.h> //the library that saved me from the blocking recv function
 
 #include <arpa/inet.h>
 
@@ -66,7 +70,7 @@ int main(int argc, char *argv[]){
             perror("client: socket");
             continue;
         }
-
+        //connect to that socket
         if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
             close(sockfd);
             perror("client: connect");
@@ -93,10 +97,9 @@ int main(int argc, char *argv[]){
 
 
 
-
+    //set everything up for stdin and sockect recv polling
     pollData[0].fd = sockfd;
     pollData[0].events = POLLIN;
-
     pollData[1].fd = fileno(stdin);
     pollData[1].events = POLLIN;
 
@@ -109,8 +112,9 @@ int main(int argc, char *argv[]){
         if(rv == -1){
             perror("Polling error");
         }
+        //check if there was some data recieved on stdin or the socket
         else if (rv != 0){
-            // check for events on receive:
+            //check if it was received on the socket
             if (pollData[0].revents & POLLIN) {
                 bzero(buf,MAXDATASIZE);
                 if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
@@ -130,7 +134,7 @@ int main(int argc, char *argv[]){
                 }
             }
             else{
-                //get the users input everytime something is received from the server
+                // check if the user is typing on the command line
                 string sUserInput;
                 getline(cin,sUserInput);
 
@@ -140,10 +144,11 @@ int main(int argc, char *argv[]){
                 //send the input to the server
                 if (send(sockfd, userInput, MAXDATASIZE, 0) == -1)
                     perror("send");
-
+                //check if the user wants to log out
                 if(sUserInput == string("logout")){
                     break;
                 }
+                //use this to fixed a missing > for the output
                 else if(sUserInput.find("send") !=  string::npos){
                     cout << "> ";
                     cout.flush();

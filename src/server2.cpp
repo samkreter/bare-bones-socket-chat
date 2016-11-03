@@ -1,13 +1,12 @@
 /*
-** server.c -- a stream socket server demo
+** Sam Kreter
+** 11/1/16
+** version 2
+** This is the server side application for a multithreaded socket chat service
+**  complie the code and run ./server2  to start chatting
 */
 
-/*TODO
-    add header to client and server
-    max people connected
-    server output
 
-*/
 
 #include <iostream>
 #include <string>
@@ -36,9 +35,13 @@
 
 #define PORT "3491"  // the port users will be connecting to
 
-#define BACKLOG 5 // how many pending connections queue will hold
+// number of pending connection will be help, shouldn't ever hit this
+#define BACKLOG 5
+//max data sent over the socket
 #define MAXDATASIZE 256
+//Number of empty recived before we know connection was lost
 #define RECIEVE_MAX 15
+//Max number of clients that will be acccepted
 #define MAX_NUM_THREADS 10
 
 
@@ -57,6 +60,7 @@ using User = struct {
     string password;
 };
 
+//Struct to hold the currently logged in users
 using cUser = struct {
     string username;
     int id;
@@ -73,6 +77,7 @@ void *get_in_addr(struct sockaddr *sa);
 void threadFunc(int id,int new_fd, bool* finished, bool* msgFlags, vector<string>& msgs,vector<cUser>& currUsers);
 int sendMessage(string cmd, int new_fd,const string& currUser, vector<cUser>& currUsers, bool* msgFlags, vector<string>& msgs);
 
+
 int main(){
 
 
@@ -85,10 +90,10 @@ int main(){
     int yes=1;
     char s[INET6_ADDRSTRLEN];
     int rv;
-    struct timeval tv;
 
 
 
+    //session based varibles to pass all the info around
     vector<cUser> currUsers;
     bool finished[MAX_NUM_THREADS];
     bool msgFlags[MAX_NUM_THREADS];
@@ -97,7 +102,7 @@ int main(){
     queue<int> ordering;
 
 
-    //initialize the flags
+    //initialize message queue and thread quit flags
     for(int i=0; i<MAX_NUM_THREADS; i++){
         ordering.push(i);
         finished[i] = false;
@@ -145,9 +150,10 @@ int main(){
         break;
     }
 
+
     freeaddrinfo(servinfo); // all done with this structure
 
-
+    //check if something went wrong
     if (p == NULL)  {
         cerr << "server: failed to bind" << endl;
         exit(1);
@@ -159,13 +165,16 @@ int main(){
         exit(1);
     }
 
+    //init message
     cout << "My chat room server. Version Two." << endl;
 
 
 
 
     while(1){
+
         //if at max clients what to accept until a connection was closed
+        //stops people over max number of connections from connecting
         while(ordering.empty()){
             for(int i=0; i<MAX_NUM_THREADS; i++){
                 if(finished[i]){
@@ -177,10 +186,12 @@ int main(){
             }
         }
 
+        //get the accepted connection
         sin_size = sizeof their_addr;
         new_fd = 0;
         new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
 
+        //check for errors
         if (new_fd == -1) {
             perror("accept");
         }
@@ -188,7 +199,9 @@ int main(){
             //cout << "testing";
             continue;
         }
+
         //turn the address from binary to family friendly G rated words
+        //I don't use this here but I will definily later, this is really cool :)
         inet_ntop(their_addr.ss_family,
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s);
@@ -196,13 +209,17 @@ int main(){
 
         //cout << "server: got connection from " <<  s << endl;
 
+        //get the next threadid to spawn
         int nextIndex = ordering.front();
         ordering.pop();
 
+        //spawn a thread for the new connection made
         threads.at(nextIndex) = thread(threadFunc,nextIndex,new_fd,
             ref(finished),ref(msgFlags),ref(msgs),ref(currUsers));
 
+
         //check if any clients have quite, reap the thread and free the index
+        // make sure to set the flags back and add the index back to the queue
         for(int i=0; i<MAX_NUM_THREADS; i++){
             if(finished[i]){
                 threads.at(i).join();
@@ -224,7 +241,7 @@ int main(){
 
 
 
-//TODO BROCAST LOGOUT
+//Main driver function for the thread to deal with all the connections
 void threadFunc(int id,int new_fd, bool* finished,
     bool* msgFlags, vector<string>& msgs, vector<cUser>& currUsers){
 
