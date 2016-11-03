@@ -1,1 +1,0 @@
-g++-4.9   --std=c++11 -pthread -g -Werror -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/client2.dir/src/client2.cpp.o  -o client2  
