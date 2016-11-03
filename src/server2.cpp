@@ -6,8 +6,6 @@
 **  complie the code and run ./server2  to start chatting
 */
 
-
-
 #include <iostream>
 #include <string>
 #include <stdlib.h>
@@ -23,6 +21,7 @@
 #include <signal.h>
 #include <sys/poll.h>
 
+//All the needed c++ structures to make my life way better
 #include <vector>
 #include <fstream>
 #include <string>
@@ -253,7 +252,7 @@ void threadFunc(int id,int new_fd, bool* finished,
     string currUser;
     struct pollfd pollData[1];
 
-
+    //set up the polling data for the sockets function
     pollData[0].fd = new_fd;
     pollData[0].events = POLLIN;
 
@@ -266,7 +265,7 @@ void threadFunc(int id,int new_fd, bool* finished,
             if (send(new_fd, "Use Command Login To Login:", 28, 0) == -1)
                 perror("send");
 
-
+            //get the users command
             cmd = getCommand(new_fd,pollData,msgFlags,id);
 
             //if the getCommand function returns null it means connection was lost
@@ -326,6 +325,7 @@ void threadFunc(int id,int new_fd, bool* finished,
 
                 cout << currUser + " logout." << endl;
 
+                //remove the user from the list of current users
                 currUsers.erase(remove_if(currUsers.begin(), currUsers.end(),[currUser](cUser u){
                     return (u.username == currUser);
                 }));
@@ -339,22 +339,30 @@ void threadFunc(int id,int new_fd, bool* finished,
                 break;
 
             }
+            //catch any other invalid input
             else {
                 if(send((new_fd),"Invalid Command",20,0) == -1)
                     perror("send");
             }
         }
     }
+    //final clean up
     delete[] cmd;
     close(new_fd);
 }
 
 //used to send a message with the username of the connected user back to themselves
+// param cmd: the string of the input to the command from the user
+// param new_fd: socket to be userd
+// param currUser: string for the username of the current user
+// param currUsers: list of the currently logged in usrs
 int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& currUsers,
  bool* msgFlags, vector<string>& msgs){
+    //find where the space is int he
     size_t spacePos = cmd.find(" ");
+    //pull out the username to send the message to
     string username = cmd.substr(0,spacePos);
-
+    // pull out th message from the command string
     string msg = cmd.substr(spacePos+1);
 
 
@@ -364,6 +372,7 @@ int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& c
 
         cout << msg << endl;
 
+        //set all loged in users message flags and add the message to their queue
         for(cUser user : currUsers){
             if(user.username != currUser){
                 msgs[user.id] = msg;
@@ -373,11 +382,12 @@ int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& c
         return 1;
     }
 
-
+    // check if the message is being sent to a logged in user
     auto it = find_if(currUsers.begin(), currUsers.end(),[username](cUser u){
         return (u.username == username);
     });
 
+    //if the user is logged in set the flag and add the message to their queue
     if(it != currUsers.end()){
 
         cout << currUser + " (to " + username + "): " + msg << endl;
@@ -389,6 +399,7 @@ int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& c
         return 1;
     }
 
+    //send and error if the user is not logged in
     if(send(new_fd, "Invalid UserID to send message", 32, 0) == -1)
         perror("Another send error bro");
 
@@ -398,7 +409,7 @@ int sendMessage(string cmd, int new_fd, const string& currUser, vector<cUser>& c
 //add a new user to the users.txt file
 int newUser(string cmd, int socket_fd){
 
-    //splits everything up
+    //parse the username and password from the command string
     size_t spacePos = cmd.find(" ");
     string username = cmd.substr(0,spacePos);
     string password = cmd.substr(spacePos+1);
@@ -458,18 +469,23 @@ int newUser(string cmd, int socket_fd){
 
 }
 
+
+// return a list of all loged in users
 int who(vector<cUser>& currUsers,int new_fd){
     string names;
 
+    // add all the currently logged in user's names to the string
     for(cUser user : currUsers){
         names += (" " + user.username);
     }
 
+    // make sure its not to long
     if(names.length() > MAXDATASIZE - 1){
         cerr << "We in some trouble with this";
         return 0;
     }
 
+    //send it back to the client
     if (send(new_fd, names.c_str(), MAXDATASIZE - 1, 0) == -1)
         perror("send");
 
@@ -508,6 +524,7 @@ int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers,
             return (u.username == username);
         });
 
+        //check if the user is already logged in
         if(currUsersIt == currUsers.end()){
 
             if(send(socket_fd, "Login Confirmed",20,0) == -1)
@@ -518,8 +535,10 @@ int login(string cmd, int socket_fd, string* currUser,vector<cUser>& currUsers,
                 msgs[user.id] = string(it->username + " has joined");
                 msgFlags[user.id] = true;
             }
+
             cout << it->username + " Login." << endl;
 
+            //add evertyhing to the currently logged in users list
             *currUser = it->username;
             currUsers.push_back(cUser());
             currUsers.back().username = it->username;
@@ -569,23 +588,29 @@ string* getCommand(int socket_fd, struct pollfd* pollData, bool* msgFlags, int i
 
     while(cmdString.length() == 0){
 
+        //check if there was something received on the socket,
+        // if nothing received within .5 seconds then check if a message is
+        // in the message queue
         rv = poll(pollData, 1, 500);
+
 
         if(rv == -1){
             perror("Error wiht polling");
         }
+        // check if there was a time out, then check the message queue
         else if(rv == 0){
             if(msgFlags[id]){
-                //msgFlags[id] = false;
+                //propogate up that a message from another users has been receieved
                 returns[0] = string("msg");
                 return returns;
             }
         }
+        // something was received on the socket connection
         else{
             //zero out the command just in case
             bzero(command,MAXDATASIZE);
 
-
+            //get the message
             if ((numbytes = recv(socket_fd, command, MAXDATASIZE - 1, 0)) == -1) {
                 perror("recv");
                 exit(1);
