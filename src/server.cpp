@@ -130,7 +130,7 @@ int main(){
     }
 
 
-    cout << ("server: waiting for connections...") << endl;
+    cout << ("My chat room server. Version One. ") << endl;
 
     //needed flags for user flow
     bool loginFlag = false;
@@ -153,7 +153,7 @@ int main(){
                 get_in_addr((struct sockaddr *)&their_addr),
                 s, sizeof s);
 
-            cout << "server: got connection from " <<  s << endl;
+            //cout << "server: got connection from " <<  s << endl;
             acceptingNew = false;
         }
 
@@ -205,6 +205,7 @@ int main(){
                     if (send(new_fd, "Server: Tom left.", 20, 0) == -1)
                         perror("send");
 
+                    cout << currUser << " logout" << endl;
                     loginFlag = false;
                     acceptingNew = true;
                     break;
@@ -229,6 +230,7 @@ int main(){
 //used to send a message with the username of the connected user back to themselves
 int sendMessage(string cmd, int socket_fd, const string& currUser){
 
+    cout << currUser + ": " + cmd << endl;
     if(send(socket_fd,(currUser + ": " + cmd).c_str(), MAXDATASIZE -1, 0) == -1)
         perror("send");
 
@@ -328,7 +330,7 @@ int login(string cmd, int socket_fd, string* currUser){
         if(send(socket_fd, ("Server: "+ it->username+" joins").c_str(),MAXDATASIZE - 1,0) == -1)
             perror("send");
         *currUser = it->username;
-        cout << "login successfully" << endl;
+        cout << *currUser << " login." << endl;
         return 1;
 
     }
