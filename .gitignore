@@ -1,3 +1,5 @@
+_build/
+
 # Object files
 *.o
 *.ko
